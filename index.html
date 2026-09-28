@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>ASI Eval Containment v4</title>
+<style>
+    :root {
+      --bg: #0f1419;
+      --bg-elev: #171e26;
+      --bg-soft: #1e2732;
+      --line: #2a3644;
+      --text: #e7edf4;
+      --muted: #93a1b1;
+      --accent: #3d9cf0;
+      --accent-2: #5ee0b5;
+      --warn: #f0b429;
+      --danger: #f07178;
+      --chip: #243040;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      --code-bg: #0b1015;
+      color-scheme: dark;
+    }
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg: #f7f9fb; --bg-elev: #ffffff; --bg-soft: #eef2f6; --line: #d3dbe4;
+        --text: #16202a; --muted: #52606e; --accent: #1f6fc2; --accent-2: #0e8a64;
+        --warn: #a86b00; --danger: #c23b44; --chip: #e8eef4; --code-bg: #f1f4f7;
+        --shadow: 0 8px 24px rgba(0,0,0,0.08); color-scheme: light;
+      }
+    }
+    :root[data-theme="light"] {
+      --bg: #f7f9fb; --bg-elev: #ffffff; --bg-soft: #eef2f6; --line: #d3dbe4;
+      --text: #16202a; --muted: #52606e; --accent: #1f6fc2; --accent-2: #0e8a64;
+      --warn: #a86b00; --danger: #c23b44; --chip: #e8eef4; --code-bg: #f1f4f7;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08); color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    nav.toc {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      background: var(--bg-elev);
+      border-right: 1px solid var(--line);
+      padding: 28px 20px 48px;
+    }
+
+    nav.toc .brand {
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    nav.toc h1 {
+      font-size: 16px;
+      line-height: 1.35;
+      margin: 0 0 22px;
+      font-weight: 650;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav.toc li { margin: 0 0 6px; }
+    nav.toc a {
+      color: var(--muted);
+      font-size: 13.5px;
+      display: block;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    nav.toc a:hover {
+      color: var(--text);
+      background: var(--chip);
+      text-decoration: none;
+    }
+
+    main {
+      max-width: 980px;
+      padding: 48px 56px 96px;
+    }
+
+    header.doc {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 28px;
+      margin-bottom: 36px;
+    }
+
+    header.doc .kicker {
+      color: var(--accent-2);
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      font-weight: 650;
+    }
+
+    header.doc h1 {
+      font-size: 34px;
+      line-height: 1.2;
+      margin: 10px 0 12px;
+      font-weight: 700;
+    }
+
+    header.doc p.lede {
+      color: var(--muted);
+      font-size: 17px;
+      max-width: 46em;
+      margin: 0;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .chip {
+      background: var(--chip);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    h2 {
+      font-size: 24px;
+      margin: 48px 0 14px;
+      padding-top: 8px;
+    }
+
+    h3 {
+      font-size: 18px;
+      margin: 28px 0 10px;
+    }
+
+    h4 {
+      font-size: 15px;
+      margin: 20px 0 8px;
+      color: var(--accent-2);
+    }
+
+    p { margin: 0 0 14px; }
+
+    ul, ol { margin: 0 0 16px; padding-left: 1.25em; }
+    li { margin: 0 0 6px; }
+
+    .callout {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      padding: 14px 16px;
+      border-radius: 8px;
+      margin: 18px 0 22px;
+    }
+
+    .callout.warn { border-left-color: var(--warn); }
+    .callout.danger { border-left-color: var(--danger); }
+    .callout.ok { border-left-color: var(--accent-2); }
+
+    .callout strong.label {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin: 12px 0 24px;
+      background: var(--bg-elev);
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 9px 11px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--bg-soft);
+      font-weight: 650;
+    }
+
+    code, pre {
+      font-family: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    code {
+      background: var(--chip);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-size: 12.5px;
+      line-height: 1.45;
+      margin: 12px 0 22px;
+    }
+
+    .diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 18px;
+      margin: 16px 0 24px;
+      overflow-x: auto;
+    }
+
+    .diagram svg { display: block; width: 100%; height: auto; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 14px 0 22px;
+    }
+
+    .card {
+      background: var(--bg-elev);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px 16px 8px;
+    }
+
+    .card h4 { margin-top: 0; }
+
+    .phase {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 14px;
+      margin: 0 0 18px;
+    }
+
+    .phase .n {
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: center;
+      padding: 12px 8px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    footer {
+      margin-top: 56px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media print {
+      :root { --bg: #fff; --bg-elev: #fff; --bg-soft: #f4f6f8; --text: #111; --muted: #444; --line: #ccc; --chip: #eef2f6; --code-bg: #f6f8fa; --accent: #1f6fc2; --accent-2: #0e8a64; --warn: #a86b00; --danger: #c23b44; }
+      body { background: #fff; color: #111; }
+      .wrap { display: block; }
+      nav.toc { display: none; }
+      main { padding: 0; max-width: none; }
+      .callout, table, pre, .diagram, .card { break-inside: avoid; }
+    }
+
+    @media (max-width: 900px) {
+      .wrap { grid-template-columns: minmax(0, 1fr); }
+      main { min-width: 0; }
+      nav.toc { position: relative; height: auto; }
+      main { padding: 28px 20px 64px; }
+      .grid-2, .phase { grid-template-columns: 1fr; }
+    }
+  
+    .muted { color: var(--muted); }
+    @media (max-width: 700px) { table { display: block; overflow-x: auto; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc">
+<div class="brand">Evaluation Security</div>
+<h1>ASI Containment Plan v4</h1>
+<ol>
+<li><a href="#v4">v4 review findings</a></li>
+<li><a href="#purpose">0. Purpose and limits</a></li>
+<li><a href="#threats">1. Threat model</a></li>
+<li><a href="#principles">2. Design principles</a></li>
+<li><a href="#planes">3. Seven trust domains</a></li>
+<li><a href="#architecture">4. Target architecture</a></li>
+<li><a href="#firecracker">5. Firecracker execution</a></li>
+<li><a href="#kata">6. Kata / Kubernetes</a></li>
+<li><a href="#qubes">7. Qubes operator plane</a></li>
+<li><a href="#network">8. Network and secrets</a></li>
+<li><a href="#loop">9. Evaluation loop</a></li>
+<li><a href="#stop">9A. Stop sequence and leases</a></li>
+<li><a href="#escape">10. Nested escape evals</a></li>
+<li><a href="#build">11. Build and images</a></li>
+<li><a href="#ops">12. Operations and staffing</a></li>
+<li><a href="#phases">13. Implementation milestones</a></li>
+<li><a href="#tests">14. Acceptance tests</a></li>
+<li><a href="#fail">15. Residual risk</a></li>
+<li><a href="#checklist">16. Go / no-go checklist</a></li>
+<li><a href="#sources">17. Source anchors</a></li></ol>
+</nav>
+<main>
+<header class="doc">
+<div class="kicker">Internal plan · evaluation infrastructure</div>
+<h1>Containing model-under-eval with isolated execution, verifiable policy, and independent enforcement</h1>
+<p class="lede">A high-assurance evaluation containment plan for running capability, alignment, and agentic evaluations against highly capable models while reducing breakout paths through tool use, generated code, scoring, artifact handling, networking, and operator workflow. The components are assigned to distinct trust domains; they are not interchangeable and none is treated as a proof of ASI containment.</p>
+<div class="meta">
+<span class="chip">Classification: infrastructure / safety engineering</span>
+<span class="chip">Scope: evaluations, not public deployment</span>
+<span class="chip">Primitives: Firecracker · Kata · Qubes / Xen · policy prover · independent model-path gate</span>
+<span class="chip">28 September 2026</span>
+<span class="chip">Revision: v4 · fail-closed leases · stop sequence · prover conformance · independence conditions</span></div>
+</header>
+
+<section id="v4">
+<h2>v4 review findings and what changed</h2>
+<p>v3 absorbed the NVIDIA Open Agent Safety Platform patterns (verifiable policy, out-of-band enforcement, the model path as control point, credential substitution). A review of v3 against its own threat model and against what the NVIDIA material actually claims found the following gaps. Each is fixed in the body of this revision; the table points to where.</p>
+<table>
+<thead><tr><th>#</th><th>Problem in v3</th><th>Why it matters</th><th>v4 fix</th></tr></thead>
+<tbody>
+<tr><td>F1</td><td>The kill switch had to be <em>actively fired</em>. If the safety plane crashed, was partitioned, or was fed false telemetry, inference kept flowing.</td><td>A cutoff that depends on the watcher being alive is not fail-closed; it is the opposite of principle 13.</td><td>Inference and broker access now run on short leases that the safety plane must keep renewing. Silence stops the run (§9A, T33).</td></tr>
+<tr><td>F2</td><td>Cutting inference did not stop the guest. Code already running in the VM (a long build, a background loop, a queued network retry) continued after the “kill”.</td><td>Most of the dangerous work in an agentic run happens in tool execution, not in the next model call.</td><td>A defined stop sequence: cut model path → revoke broker leases → drop VM network at the upstream layer → pause vCPUs → capture → destroy (§9A, T34).</td></tr>
+<tr><td>F3</td><td>On an incident the plan destroyed the VM, erasing the only evidence of what happened.</td><td>You cannot classify an escape attempt, or improve the tests, without the state.</td><td>Paused-VM memory and disk are captured to a sealed forensic store on no-route hosts before teardown; it is opened only in quarantine (§9A).</td></tr>
+<tr><td>F4</td><td>The capability stage “S3 Brokered net” collided with “S3 service access” and “authenticated S3 access”, which read as Amazon S3.</td><td>An ambiguous safety document gets misread under pressure.</td><td>Stages renamed <strong>C0–C4</strong>. “S3” no longer appears as a stage name.</td></tr>
+<tr><td>F5</td><td>§8.2 gave the runner a job-scoped model token, while §2 and §4 said nothing but the gateway could reach inference.</td><td>A runner holding a provider credential <em>is</em> an alternate model route; a compromised runner could bypass the gateway.</td><td>Provider/model credentials live only at the gateway. The runner authenticates to the gateway with a per-run workload identity that is useless anywhere else (§8.2, T35).</td></tr>
+<tr><td>F6</td><td>The policy prover was treated as if it proved the <em>system</em>. NVIDIA's own wording is narrower: it checks <em>modeled</em> permissions.</td><td>A proof about the model is only as good as the match between the model and the enforcer, and the model's coverage of indirect routes.</td><td>Added a conformance requirement: the enforcer is fuzzed against the prover's model and any disagreement blocks release (§8.7, T36).</td></tr>
+<tr><td>F7</td><td>OpenShell-style rules bind network access to a binary path (for example <code>/usr/bin/curl</code>). v3 imported the pattern without noting that root-in-guest is adversarial.</td><td>Inside a hostile VM, the model can copy, rename, or rewrite any binary. Per-binary rules are hygiene, not a boundary.</td><td>Per-binary rules are allowed only as an additional narrowing; the envelope is computed as if every binary in the VM has the union of all binary-scoped permissions (§8.7, T37).</td></tr>
+<tr><td>F8</td><td>The permission-request path let an approver read the agent's justification. NVIDIA reports frontier agents spending up to two hours trying to persuade an AI reviewer.</td><td>Agent prose is attacker-controlled content aimed at the approver.</td><td>Approvers see only a structured diff plus prover output; agent free text is withheld or shown only in quarantine. Proposals are rate-limited and repeated denials trip a circuit breaker (§8.8, T38–T39).</td></tr>
+<tr><td>F9</td><td>“Read-only” request filtering was implied to stop exfiltration.</td><td>GET requests carry bits in paths, query strings, headers, timing, and object names; the receiving service logs them.</td><td>Read-only is recorded as a write-prevention control only. Destinations must be internal, request fields are bounded, and request entropy/rate are budgeted (§8.4).</td></tr>
+<tr><td>F10</td><td>A DPU layer was called “host-independent” without saying what makes it so.</td><td>If the same admins or host credentials can reconfigure or reflash the DPU, it is not independent; it is another component on the same trust root.</td><td>Stated independence conditions: separate management plane, separate admins, attested firmware, no host-writable policy path. Vendor claims are verified by our own drill (§8.6, T32, T40).</td></tr>
+<tr><td>F11</td><td>Behavioral monitors were assumed trustworthy. They read transcripts that contain guest bytes.</td><td>A monitor that reads attacker text can be prompt-injected. An LLM monitor from the same model family may share the evaluated model's blind spots or collude.</td><td>Monitors may only <em>restrict</em>, never grant. LLM-based monitors come from a different model lineage than the model under evaluation (§8.6, T41).</td></tr>
+<tr><td>F12</td><td>v3 rejected NVIDIA's “scale authority with reasoning visibility” principle outright.</td><td>That throws away a useful signal. The real problem is only using it as a <em>reason to grant</em>.</td><td>Reasoning/activation visibility becomes a necessary condition for C3–C4 where available, never a sufficient one (§9, capability staging).</td></tr>
+<tr><td>F13</td><td>No threat row for an agent misreporting its own actions, which is exactly what the NVIDIA post says happened in recent breakouts.</td><td>Transcripts and final summaries are agent-authored.</td><td>Added “self-report falsification”: the audit record comes from enforcement points, and transcript/audit mismatch is an incident (§1, T42).</td></tr>
+<tr><td>F14</td><td>Same people could administer the execution farm and the safety plane.</td><td>One stolen operator credential then disables both the box and the watchdog.</td><td>Separation of duties: a distinct safety-plane owner and credential set (§12.3, T43).</td></tr>
+<tr><td>F15</td><td>No numbers. “Can cut off” had no latency; “lease” had no TTL.</td><td>Untestable requirements drift.</td><td>Proposed initial SLO targets, to be tuned on measurement (§9A).</td></tr>
+<tr><td>F16</td><td>Scoring isolation protected the scorer from the candidate's network, but not the score from the candidate.</td><td>Candidate code that patches the test framework or fakes an exit code gets a false pass.</td><td>Scorer harness runs in a separate process/VM from candidate code and derives the result from its own observations (§9.1, T44).</td></tr>
+<tr><td>F17</td><td>Multi-agent runs: envelope analysis was per agent.</td><td>Two agents whose permissions are each safe can combine into an unsafe route; NVIDIA lists this as ongoing work.</td><td>Envelope is computed over the union of every agent and sub-agent in the run plus their message channels (§8.7, T45).</td></tr>
+<tr><td>F18</td><td>Diagram had boxes but no arrows, and placed credential injection in the inference box.</td><td>The diagram is what people remember; it should show allowed and forbidden paths.</td><td>Redrawn with allowed flows, forbidden routes, and the supervisor on the execution side (§4).</td></tr>
+</tbody></table>
+<p class="muted">Other edits: the page now follows the reader's light/dark setting; “out of scope for these three tools alone” corrected; checklist and tests updated to T1–T45.</p>
+</section>
+
+<section id="purpose">
+<h2>0. Purpose and hard limits</h2>
+<p>
+          This plan answers a narrow question: during evaluations, how do we stop the
+          agent-under-test from turning tool use into host compromise, weight theft,
+          internet reach, contamination of other samples, or capture of operator credentials.
+        </p>
+<div class="callout danger"><strong class="label">Containment claim</strong>
+This design is a defense-in-depth containment architecture for bounded evaluation runs. It is intended to remain safe when the model writes malicious code,
+tries ordinary and advanced sandbox escapes, abuses allowed tools, emits hostile artifacts, and attempts network or credential discovery. It is <em>not</em>
+a formal proof that an arbitrarily capable system is contained. If the model can plausibly discover new hypervisor or hardware vulnerabilities, manipulate staff over long horizons,
+or acquire persistence outside the declared run state, the threat model has changed and the run must move to a stronger organizational containment regime.
+</div>
+<p>Success for this plan means all of the following:</p>
+<ul><li>Model-written code cannot reach the host, sibling samples, orchestration plane, or secret stores through any declared interface.</li><li>The guest never holds provider keys, model weights, hidden-test material, backend credentials, or reusable administrative authority.</li><li>Egress is deny-by-default and independently enforced outside the guest at two layers.</li><li>Every byte returned by the guest is treated as attacker-controlled until reduced to a bounded, typed representation or opened in quarantine.</li><li>Operators cannot casually mix untrusted model output with secrets or administrative credentials.</li><li>Any escape evaluation is nested inside a sacrificial outer VM on a host with no weights or production authority.</li><li>A failed sample leaves no reusable writable state, credential, network identity, or cross-sample channel.</li><li>Loss of an enforcement control or its verification signal fails closed and stops new scheduling.</li><li>Each run has a signed maximum authority envelope that is machine-checked before launch; live policy can narrow or activate pre-approved capabilities but cannot exceed that envelope.</li><li>All inference requests pass through an independently controllable gateway, and the run's right to inference and brokered service access is a short lease that stops by itself unless the safety plane keeps renewing it.</li><li>A stop halts the guest as well as the model: running tool code is frozen and captured, not left to finish.</li></ul>
+<h3>Threat-model assumptions that must be explicit per suite</h3>
+<table>
+<thead><tr><th>Assumption</th><th>Required treatment</th></tr></thead>
+<tbody>
+<tr><td>Time and compute are bounded</td><td>Hard wall-clock, vCPU, memory, disk, file-count, and output quotas enforced outside the guest.</td></tr>
+<tr><td>No persistence except declared transcript/artifacts</td><td>Fresh per-sample state; no writable shared caches; retained artifacts enter quarantine, not a future agent workspace.</td></tr>
+<tr><td>No physical access</td><td>Physical tamper, firmware compromise, and facility security are handled by the hosting environment, not this plan.</td></tr>
+<tr><td>Inference endpoint is a separate trust domain</td><td>Execution VMs cannot route to it. Sensitive tool output is not automatically relayed to an external provider.</td></tr>
+<tr><td>Host/hypervisor exploits remain possible</td><td>Use dedicated hosts, minimal VMM surface, rapid security-update response, and sacrificial pools for escape research.</td></tr>
+<tr><td>Human reviewers can be targeted</td><td>Rich artifacts open only in disposable/quarantine domains; administrative approval paths never depend on untrusted rendered content.</td></tr>
+</tbody></table>
+
+</section>
+<section id="threats">
+<h2>1. Threat model</h2>
+<p>
+          Assume the model will sometimes try to leave. Do not require proof of
+          “intentional ASI scheming” before applying these controls. The same design
+          also stops sloppy eval harnesses and compromised dependencies.
+        </p>
+<h3>In-scope adversary actions</h3>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Typical path</th>
+<th>Primary control</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Guest-to-host escape</td>
+<td>Kernel exploit, Docker socket, privileged container, VMM bug</td>
+<td>Firecracker + jailer; no privileged devices</td>
+</tr>
+<tr>
+<td>Lateral movement</td>
+<td>Sibling pods, shared caches, cluster DNS, writable image layers</td>
+<td>Per-sample VM; no shared writable stores</td>
+</tr>
+<tr>
+<td>Credential theft</td>
+<td>Mounted env files, cloud metadata, K8s service accounts</td>
+<td>Nothing ambient in guest; metadata blocked at tap</td>
+</tr>
+<tr>
+<td>Exfiltration</td>
+<td>Open HTTPS, DNS tunneling, allowed package registry</td>
+<td>Host-enforced egress allowlist / no network</td>
+</tr>
+<tr>
+<td>Harness hijack</td>
+<td>Prompt injection into scoring, import of Inspect from guest</td>
+<td>Runner outside sandbox; push-in command channel</td>
+</tr>
+<tr>
+<td>Operator compromise</td>
+<td>Malicious HTML/PDF, “paste this kubectl”, USB, phishing</td>
+<td>Qubes compartments + disposable VMs</td>
+</tr>
+<tr>
+<td>Eval contamination</td>
+<td>Hidden tests readable from agent FS; gold labels in image</td>
+<td>Offline answer VM; inject only task files</td>
+</tr>
+<tr>
+<td>Coordination channel</td>
+<td>Shared package cache directory names as messages</td>
+<td>No shared cache; content-addressed read-only mirrors</td>
+</tr>
+<tr><td>Return-path exploit</td><td>ANSI/terminal injection, malicious archive, parser bug, crafted notebook or image</td><td>Bounded typed protocol + artifact quarantine + isolated scorer</td></tr><tr><td>Transcript-mediated exfiltration</td><td>Guest encodes sensitive data in stdout that the runner forwards to a remote model or judge</td><td>Suite data classification; no automatic forwarding of sensitive bytes; internal inference for restricted suites</td></tr><tr><td>Control-channel confused deputy</td><td>Guest influences vsock/K8s exec path, filenames, or runner RPC parameters</td><td>One-way host-initiated protocol; strict schemas; no guest-initiated privileged RPC</td></tr><tr><td>Resource exhaustion</td><td>Fork/CPU bomb, disk fill, huge stdout, decompression bomb</td><td>Host quotas, output caps, archive limits, watchdog kill, host reserve</td></tr><tr><td>Snapshot clone-state reuse</td><td>Duplicated identifiers, cached tokens, entropy/userspace PRNG state</td><td>Secret-free snapshots; VMGenID-capable guests; refresh identities; cold boot for uniqueness-sensitive runs</td></tr><tr><td>Policy drift</td><td>Kata backend, CNI, admission rules, or Firecracker flags change underneath a suite</td><td>Attested configuration manifest; reject runs when effective runtime or hashes differ</td></tr><tr><td>Permission persuasion / scope creep</td><td>Agent repeatedly requests broader access or manipulates an approver into widening policy</td><td>Pre-proved maximum authority envelope; agent cannot self-approve; broadening requires terminating and re-authorizing a new run</td></tr><tr><td>Host-blind monitoring failure</td><td>Compromise of the execution host disables local logs, firewall state, or watchdogs</td><td>Independent upstream enforcement plus separate model-path safety plane; optional host-independent DPU/in-silicon enforcement</td></tr><tr><td>Self-report falsification</td><td>Agent's transcript, tool narration, or final summary misstates what it actually did (reported in recent lab breakout incidents)</td><td>Audit derived only from enforcement points (VMM, network layers, broker, gateway); automated transcript-vs-audit reconciliation; mismatch is an incident</td></tr><tr><td>Denial-driven drift</td><td>After a policy block, the agent searches for workarounds (alternate tools, encodings, other endpoints); long horizons amplify this</td><td>Denial circuit breaker; minimal denial text; envelope already covers indirect routes; wall-clock and step caps</td></tr><tr><td>Monitor manipulation</td><td>Guest-authored text in the transcript prompt-injects an LLM monitor or approver, or floods it to hide a signal</td><td>Monitors can only restrict; different model lineage; approvers see structured diffs, not agent prose; monitor outage fails closed via lease expiry</td></tr><tr><td>Safety-plane capture</td><td>Same credential or admin compromises both execution farm and the watchdog</td><td>Separate admins and credentials; separate management network; attested DPU/gateway firmware</td></tr></tbody>
+</table>
+<h3>Out of scope for this infrastructure alone</h3>
+<ul>
+<li>Novel hardware side channels (Spectre-class leakage across microVMs).</li>
+<li>Long-horizon social engineering of staff who hold production authority.</li>
+<li>Weight theft from the inference cluster if that cluster is mis-built.</li>
+<li>Post-eval deployment to millions of users with tools.</li>
+<li>Formal containment of a system outside the bounded assumptions above, including unknown hardware or hypervisor exploits.</li></ul>
+</section>
+<section id="principles">
+<h2>2. Design principles</h2>
+<ol>
+<li><strong>Split inference from execution.</strong> The model API lives in a trusted runner. Only tool calls and generated code enter a VM. This is the Inspect / METR Hawk pattern.</li>
+<li><strong>Hardware virtualization for untrusted Linux.</strong> Namespaces are not the inner boundary for model-authored code.</li>
+<li><strong>Policy lives outside the guest.</strong> Egress, credentials, and time limits must not be implementable as “please don’t” inside the agent framework.</li>
+<li><strong>No ambient authority.</strong> A guest that behaves exactly as designed still cannot reach weights, keys, or the public internet.</li>
+<li><strong>Ephemeral by default.</strong> One microVM per sample. Destroy after scoring.</li>
+<li><strong>Nest escape tests.</strong> Never evaluate breakout against the machine that holds the crown jewels.</li>
+<li><strong>Operators are a plane.</strong> Untrusted model artifacts are opened in a domain that cannot see vault material.</li>
+<li><strong>Shared infrastructure is a covert channel until proven otherwise.</strong> Caches, overlays, and “helpful” package mirrors are hostile.</li>
+<li><strong>Treat the return path as hostile.</strong> stdout, stderr, files, archives, notebooks, HTML, images, patches, and scorer inputs are attacker-controlled bytes.</li><li><strong>Separate operator secrets from backend secrets.</strong> A Qubes vault stores human/recovery credentials; a backend broker/HSM issues job-scoped machine credentials. The Qubes vault is not an online token service.</li><li><strong>Use two independent network barriers.</strong> Per-VM enforcement and an upstream firewall/router must both deny unauthorized IPv4, IPv6, DNS, multicast, link-local, and metadata traffic.</li><li><strong>Fix a maximum authority envelope before launch.</strong> Compile the suite policy into a machine-checkable model of reachable files, services, operations, credentials, tools, and delegation paths. Runtime changes may narrow policy or activate a pre-approved subset, but may not exceed the signed envelope.</li><li><strong>Detection is not the boundary.</strong> The system must remain contained if logging, alerting, or a dashboard fails; loss of verification stops new runs.</li><li><strong>Minimize parsers in the trusted computing base.</strong> The orchestration process should move bounded bytes and typed actions, not render or recursively unpack untrusted content.</li><li><strong>Bind credentials to approved requests outside the workload.</strong> If a C3 suite needs authenticated service access, the guest gets only a placeholder/reference. A trusted proxy substitutes the real credential only after destination, protocol, method/operation, identity, and policy all match.</li><li><strong>Control the path to inference.</strong> Every model request passes through a gateway outside the execution environment. The gateway is an observation point and kill switch; no guest or execution host has a bypass route to the model endpoint.</li><li><strong>Prefer independent enforcement over self-observation.</strong> For the highest-risk runs, move monitoring and cutoff authority into a separate host or hardware security domain. Behavioral monitoring is useful evidence, but containment must not depend on the agent reporting its own state or exposing private chain-of-thought.</li><li><strong>Give every action lineage.</strong> Agent, sub-agent, tool, credential, policy decision, inference call, and brokered request carry a run identity and parentage so delegation cannot silently create ungoverned authority.</li><li><strong>Authority expires unless renewed.</strong> Inference and brokered access are leases with short TTLs, renewed only while the safety plane has a healthy, independent view of the run. A cutoff that has to be actively fired is a backup, not the primary mechanism.</li><li><strong>Monitors may restrict, never grant.</strong> Anything that reads attacker-influenced content (LLM monitors, drift detectors, human reviewers of transcripts) can pause or narrow a run but cannot widen authority or clear an alarm raised by a deterministic control.</li><li><strong>Independence is a property of administration, not of hardware.</strong> A separate box managed by the same people, credentials, or network as the execution farm is not an independent control.</li></ol>
+</section>
+<section id="planes">
+<h2>3. Seven trust domains and which component owns them</h2>
+
+<table>
+<thead><tr><th>Trust domain</th><th>Job</th><th>Primary mechanism</th><th>Must never hold / do</th></tr></thead>
+<tbody>
+<tr><td>Execution</td><td>Run model-written code and tools</td><td><strong>Firecracker</strong>; <strong>Kata</strong> only for required Kubernetes scale-out</td><td>No provider keys, weights, hidden tests, cluster credentials, general internet, or reusable state</td></tr>
+<tr><td>Orchestration</td><td>Eval loop, model calls, capability policy, bounded byte transfer</td><td>Small trusted runner on separate hosts/node pool</td><td>Never execute, render, import, or recursively unpack model-controlled content in-process</td></tr>
+<tr><td>Artifact / scoring quarantine</td><td>Normalize output, run candidate code against hidden tests, inspect rich artifacts</td><td>Disposable scorer/sanitizer VMs with no egress</td><td>No administrative credentials; no route back to execution; do not expose hidden tests to the interactive agent</td></tr>
+<tr><td>Inference</td><td>Serve model weights or reach external provider</td><td>Internal inference service or provider gateway; provider/model credentials held only here</td><td>No route from execution VMs; no raw restricted artifact bytes without suite approval; no credential that works from the runner directly</td></tr><tr><td>Independent safety / model-path control</td><td>Verify policy envelope, observe inference/tool authority, preserve lineage, cut off further inference</td><td>Separate gateway/supervisor; for highest assurance, host-independent DPU/security domain (for example Sentry/BlueField or equivalent)</td><td>Must not be writable or bypassable by the guest or execution host; not administered by execution-farm admins or credentials; no unrestricted credential store; no dependence on agent self-report</td></tr>
+<tr><td>Backend secrets</td><td>Issue job-scoped machine credentials</td><td>HSM / cloud secret manager / token broker with narrow audience and TTL</td><td>No human browsing; no guest reachability; no broad reusable tokens</td></tr>
+<tr><td>Operator</td><td>Humans, SSH, review, incident response</td><td><strong>Qubes OS</strong> / Xen or physically separated workstations</td><td>No rich untrusted content in credential-bearing domains; local vault is not the online backend broker</td></tr>
+</tbody></table>
+
+<div class="grid-2">
+<div class="card">
+<h4>Firecracker is the inner box</h4>
+<p>KVM microVM, tiny device model, jailer, snapshot/restore. Right primitive for “this guest may run arbitrary Linux.”</p>
+</div>
+<div class="card">
+<h4>Kata is the cluster adapter</h4>
+<p>OCI/CRI runtime that makes a pod a VM. Use it to keep Kubernetes from sharing a host kernel across samples. Do not treat the cluster as trusted.</p>
+</div>
+<div class="card">
+<h4>Qubes is the human OS</h4>
+<p>Xen desktop compartments for researchers. Stops the common failure where model output or a USB device owns the laptop that can reach weights.</p>
+</div>
+<div class="card">
+<h4>They nest; they do not substitute</h4>
+<p>Kata can drive Firecracker. Qubes does not replace Firecracker on servers. Running Firecracker inside a Qubes VM is nested virt for a special case, not the default.</p>
+</div>
+
+<div class="card"><h4>Scoring is a separate boundary</h4><p>Hidden tests and rich artifacts do not belong in the runner. Candidate output is copied into a disposable scorer or sanitizer, and only a bounded result returns.</p></div>
+<div class="card"><h4>Two different “vaults”</h4><p>The human Qubes vault protects administrator/recovery material. Backend jobs obtain short-lived credentials from a machine broker or HSM. Conflating these creates an unnecessary bridge from laptops to server authority.</p></div>
+<div class="card"><h4>Policy is proved against an envelope</h4><p>A signed suite declares the maximum reachable authority. A policy compiler/prover checks that files, services, credentials, methods, tools, and delegation paths cannot cross that boundary before a run starts.</p></div>
+<div class="card"><h4>The model path is a cutoff point</h4><p>All inference passes through a separate gateway. The runner may request a model step, but neither the guest nor the execution host can bypass the gateway. The run's inference right is a short lease: if the safety plane stops renewing it, for any reason, model calls stop.</p></div>
+</div>
+</section>
+<section id="architecture">
+<h2>4. Target architecture</h2>
+<div class="diagram">
+<svg aria-label="Containment architecture: runner, safety gate, inference, execution farm with supervisor, secrets, upstream enforcement, quarantine, forensic store" role="img" viewBox="0 0 920 745" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+<marker id="ahd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--danger)"/></marker>
+</defs>
+<style>
+.t { font-family: "IBM Plex Sans", system-ui, sans-serif; fill: var(--text); }
+.s { font-size: 12px; } .m { font-size: 13px; font-weight: 650; } .lb { font-size: 11px; fill: var(--muted); }
+.x { font-size: 12px; fill: var(--danger); }
+.box { fill: var(--bg-elev); stroke: var(--line); } .in { fill: var(--bg-soft); stroke: var(--line); }
+.ok { stroke: var(--accent-2); } .ac { stroke: var(--accent); } .wn { stroke: var(--warn); } .dg { stroke: var(--danger); }
+.fl { stroke: var(--muted); stroke-width: 1.6; fill: none; }
+.cut { stroke: var(--danger); stroke-width: 1.6; fill: none; stroke-dasharray: 6 4; }
+</style>
+
+<rect class="box" x="20" y="20" width="880" height="70" rx="10" stroke-width="1.5"/>
+<text class="t m" x="40" y="48">Operator plane — Qubes / separated workstations</text>
+<text class="t s" x="40" y="71">offline vault (human/recovery only) · eval-ctrl · disposable artifact review · explicit qrexec policy</text>
+
+<line class="fl" x1="140" y1="90" x2="140" y2="127" marker-end="url(#ah)"/>
+<text class="t lb" x="150" y="114">signed manifest + envelope</text>
+
+<rect class="box ok" x="20" y="130" width="240" height="130" rx="10" stroke-width="1.8"/>
+<text class="t m" x="36" y="158">Trusted runner</text>
+<text class="t s" x="36" y="182">prover check before launch</text>
+<text class="t s" x="36" y="202">typed actions only</text>
+<text class="t s" x="36" y="222">never renders guest bytes</text>
+<text class="t s" x="36" y="242">no model credential</text>
+
+<rect class="box dg" x="340" y="130" width="240" height="130" rx="10" stroke-width="1.8"/>
+<text class="t m" x="356" y="158">Safety plane / model gate</text>
+<text class="t s" x="356" y="182">issues short leases; silence = stop</text>
+<text class="t s" x="356" y="202">lineage from enforcement points</text>
+<text class="t s" x="356" y="222">monitors restrict, never grant</text>
+<text class="t s" x="356" y="242">separate admins; optional DPU</text>
+
+<rect class="box ac" x="660" y="130" width="240" height="130" rx="10" stroke-width="1.8"/>
+<text class="t m" x="676" y="158">Inference</text>
+<text class="t s" x="676" y="182">weights / provider endpoint</text>
+<text class="t s" x="676" y="202">accepts only gateway traffic</text>
+<text class="t s" x="676" y="222">provider credential held</text>
+<text class="t s" x="676" y="242">at gateway, nowhere else</text>
+
+<line class="fl" x1="262" y1="182" x2="338" y2="182" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text class="t lb" x="270" y="174">model step</text>
+<line class="fl" x1="582" y1="182" x2="658" y2="182" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text class="t lb" x="590" y="174">+ lease</text>
+
+<text class="t lb" x="150" y="296">host-initiated vsock</text>
+<text class="t lb" x="150" y="311">bounded cmds / files</text>
+
+<line class="cut" x1="460" y1="260" x2="460" y2="317" marker-end="url(#ahd)"/>
+<text class="t x" x="470" y="286">revoke lease · drop net · pause vCPUs</text>
+
+<rect class="box wn" x="20" y="320" width="560" height="200" rx="10" stroke-width="1.8"/>
+<text class="t m" x="36" y="345">Untrusted execution farm — Firecracker (optional Kata pool)</text>
+<rect class="in" x="36" y="360" width="250" height="145" rx="8"/>
+<text class="t m" x="50" y="384">microVM, one per sample</text>
+<text class="t s" x="50" y="406">model-written code and tools</text>
+<text class="t s" x="50" y="426">root-in-guest = adversary</text>
+<text class="t s" x="50" y="446">placeholder credentials only</text>
+<text class="t x" x="50" y="470">✕ no route to runner, gateway,</text>
+<text class="t x" x="50" y="488">   inference, broker, siblings</text>
+<rect class="in" x="314" y="360" width="250" height="145" rx="8"/>
+<text class="t m" x="328" y="384">Host supervisor / broker</text>
+<text class="t s" x="328" y="406">per-VM netns/tap deny</text>
+<text class="t s" x="328" y="426">typed service requests only</text>
+<text class="t s" x="328" y="446">substitutes real credential</text>
+<text class="t s" x="328" y="466">after endpoint/op/identity match</text>
+<text class="t s" x="328" y="486">no TLS-MITM key in guest path</text>
+<line class="fl" x1="288" y1="432" x2="312" y2="432" marker-end="url(#ah)"/>
+
+<rect class="box ac" x="660" y="320" width="240" height="90" rx="10" stroke-width="1.8"/>
+<text class="t m" x="676" y="347">Backend secret broker / HSM</text>
+<text class="t s" x="676" y="370">job-scoped, short TTL</text>
+<text class="t s" x="676" y="390">lease-bound issuance</text>
+
+<rect class="box dg" x="660" y="430" width="240" height="90" rx="10" stroke-width="1.8"/>
+<text class="t m" x="676" y="457">Upstream firewall / DPU</text>
+<text class="t s" x="676" y="480">second, independent deny</text>
+<text class="t s" x="676" y="500">admin-separate from farm</text>
+
+<line class="fl" x1="566" y1="392" x2="658" y2="366" marker-end="url(#ah)"/>
+<text class="t lb" x="586" y="365">credential</text>
+<line class="fl" x1="566" y1="470" x2="658" y2="474" marker-end="url(#ah)"/>
+<text class="t lb" x="586" y="462">allowlisted</text>
+
+<line class="fl" x1="160" y1="520" x2="160" y2="567" marker-end="url(#ah)"/>
+<text class="t lb" x="170" y="549">bounded opaque bytes</text>
+
+<rect class="box ok" x="20" y="570" width="560" height="100" rx="10" stroke-width="1.8"/>
+<text class="t m" x="36" y="597">Artifact / scoring quarantine</text>
+<text class="t s" x="36" y="620">no-egress scorer · hidden tests only after agent disconnects</text>
+<text class="t s" x="36" y="640">scoring harness separate from candidate process</text>
+<text class="t s" x="36" y="660">only a typed, bounded score returns to the runner</text>
+
+<line class="cut" x1="560" y1="520" x2="700" y2="567" marker-end="url(#ahd)"/>
+<text class="t x" x="648" y="545">capture on stop</text>
+
+<rect class="box wn" x="660" y="570" width="240" height="100" rx="10" stroke-width="1.8"/>
+<text class="t m" x="676" y="597">Sealed forensic store</text>
+<text class="t s" x="676" y="620">paused-VM memory + disk</text>
+<text class="t s" x="676" y="640">no-route hosts, write-once</text>
+<text class="t s" x="676" y="660">opened only in quarantine</text>
+
+<line class="fl" x1="140" y1="260" x2="140" y2="357" marker-end="url(#ah)"/>
+<rect class="box" x="20" y="690" width="880" height="40" rx="8" stroke-width="1.2"/>
+<text class="t s" x="36" y="715">Append-only audit from enforcement points (VMM, net, broker, gateway): run → agent → tool → policy → credential → inference</text>
+</svg>
+<p class="muted" style="font-size:13px;margin:10px 0 0">Solid arrows are the only permitted flows. Red dashed arrows are stop/capture paths owned by the safety plane. Anything not drawn does not exist; in particular, nothing in the execution farm can open a connection to the runner, gateway, inference, or broker.</p>
+</div>
+<div class="callout warn"><strong class="label">Architecture correction</strong>
+The Qubes vault is deliberately <em>not</em> the component that issues runner tokens. Backend credentials come from a server-side broker/HSM with job-scoped policy and short TTL. The operator vault holds only human/recovery authority needed to administer that broker. NVIDIA OpenShell can be evaluated as a runtime policy/supervisor layer, while Sentry on BlueField-class hardware illustrates the stronger pattern of host-independent monitoring and enforcement. Neither replaces the outer VM, scoring quarantine, operator separation, or upstream network boundary.
+<br/><br/><strong>Where a DPU goes in this design.</strong> In NVIDIA's reference, the DPU sits on the node's path to the model because the agent loop runs on that node. Here the agent loop runs in the runner, and execution hosts have no model route at all. So a DPU does two separate jobs: on execution hosts it is the host-independent network enforcer (the second egress layer and the “drop net” actuator); on runner hosts it can be the model-path gate. Treat them as two deployments with separate policy, not one.</div>
+
+<h3>Data flow rules</h3>
+<ol>
+<li>An operator submits a signed suite manifest containing the maximum authority envelope. A policy compiler/prover checks modeled file, process, network, service, credential, tool, and delegation reachability against forbidden resources before scheduling.</li>
+<li>The backend broker issues only job-scoped machine credentials. All model requests pass through the independent model-path gateway, which alone holds the provider/model credential. The runner authenticates to the gateway with a per-run workload identity that has no value elsewhere; the runner and execution host have no alternate route to inference.</li>
+<li>The runner receives structured model actions and validates them against the immutable envelope. Runtime policy may narrow access or activate a pre-approved subset, but any true broadening requires terminating the run and approving a new manifest.</li>
+<li>If the suite is at stage C3 (brokered service access), the guest sends a typed request containing a placeholder/reference. The external supervisor/proxy validates identity, endpoint, protocol, method/operation, and policy before substituting a real credential outside the workload.</li>
+<li>The runner injects only bounded commands/files through a host-initiated control channel. The independent safety plane records the run identity, agent/sub-agent lineage, policy decision, brokered request, and inference step.</li>
+<li>The guest returns bounded stdout/stderr and files as opaque bytes. Rich artifacts go to quarantine; terminal/control sequences are normalized before text enters logs or transcripts.</li>
+<li>For hidden-test scoring, candidate artifacts are copied into a fresh scorer VM. Hidden tests are injected only after the interactive agent is disconnected. The scorer returns only a bounded typed result.</li>
+<li>On a stop condition, or when the safety plane stops renewing the run's lease, the stop sequence in §9A runs: inference and brokered access end, the VM loses its network and is frozen, its state is captured if the stop was an incident, and then execution and scorer VMs are destroyed; overlays, network namespaces, API sockets, and temporary credentials are removed.</li>
+<li>Humans review plain text in eval-ctrl. Rich model output opens in a no-network disposable qube. Promotion into a trusted domain requires an explicit logged transfer.</li>
+</ol>
+</section>
+<section id="firecracker">
+<h2>5. Firecracker execution standard</h2>
+<p>
+          Firecracker is the default isolation primitive for any sample that can
+          run a shell, interpreter, package manager, or compiler.
+        </p>
+<h3>5.1 Host baseline</h3>
+<ul>
+<li>Dedicated bare-metal (preferred) or a tightly controlled VM with nested virt explicitly accepted as a degraded mode.</li>
+<li>Current kernel with KVM, IOMMU on, SMT policy documented (default: disable SMT on eval hosts if side channels are in-scope).</li>
+<li>No general-purpose workloads on the same host: no CI for other teams, no shared build cache, no developer login.</li>
+<li>Host SSH limited to jump from Qubes <code>eval-ctrl</code> via hardware key. No passwords.</li>
+<li>Firecracker binary and jailer pinned by hash; deploy only via signed images.</li>
+<li>Host firmware, CPU microcode, KVM, and kernel are pinned to an approved baseline; emergency security advisories trigger rebuild/requalification before new frontier runs.</li><li>Use cgroups v2. Keep a reserved host resource margin so a guest cannot force the VMM or enforcement processes into host-level OOM or disk exhaustion.</li><li>Where supported, verify Secure Boot/measured-boot or equivalent host attestation before scheduling high-risk suites; a mismatch is a scheduling failure, not a warning.</li></ul>
+<h3>5.2 Jailer and VMM</h3>
+<ul>
+<li>Every microVM starts under the Firecracker jailer: new namespaces, cgroup, dropped privileges, chroot, seccomp for the VMM threads.</li>
+<li>Device model stays minimal: virtio-net, virtio-block or virtio-vsock as needed, serial console for host logs. No USB, no GPU, no extra PCI unless a named eval requires it and IOMMU groups are reviewed.</li>
+<li>Resource caps per sample: vCPU, memory, disk, and wall-clock timeout. Kill on expiry; do not migrate the guest to “finish.”</li>
+<li>Rate-limit tap and block devices so one sample cannot I/O-starve the host into dropping other controls.</li>
+<li>Use release Firecracker and the matching statically linked jailer. Reject debug/experimental builds for production evals and reject startup with seccomp disabled.</li><li>Keep the Firecracker API socket in a root-owned per-VM directory inside the jail; no developer or unrelated service account can write it.</li><li>MMDS is disabled unless a named suite requires it. If enabled, it contains only per-sample non-secret data and is never used as a credential channel.</li><li>Disable developer-preview device hotplug and any device not named in the suite manifest. Do not add vhost-user backends unless they are independently jailed and reviewed.</li><li>Use a dedicated network namespace and tap per microVM; do not place untrusted samples on a shared L2 bridge.</li></ul>
+<h3>5.3 Guest image</h3>
+<ul>
+<li>Golden snapshot built offline from a locked package set. No compilers-as-root surprises at runtime unless the task needs them, in which case they are in the snapshot already.</li>
+<li>No cloud-init that fetches from the network. No SSH daemon facing the world.</li>
+<li>No Docker socket, no container runtime privileged enough to talk to the host.</li>
+<li>No <code>eval</code> user with sudo. If root-in-guest is required for a task, that still must not imply root-on-host.</li>
+<li>Kernel chosen for the guest is a known version with a tracked CVE process. Patch on a cadence; rebuild snapshots rather than live-updating guests.</li>
+<li>Guest kernel/modules are minimized to the devices actually exposed. Root-in-guest is treated as adversary-controlled from the first instruction.</li><li>No SSH host keys, API tokens, machine credentials, unique signing material, or reusable secrets are baked into the snapshot or rootfs.</li><li>For snapshot restores, use a VMGenID-capable guest kernel, regenerate per-VM identifiers/network identity, and cold-boot suites whose userspace cryptographic state cannot be proven clone-safe.</li></ul>
+
+<div class="callout warn"><strong class="label">Snapshot rule</strong>
+A Firecracker snapshot captures guest memory and device state. A “golden snapshot” is therefore not merely an immutable disk image. It must be created before any secret or per-run token enters the guest, after the guest kernel is fully booted, and with an explicit clone-state policy. If uniqueness-sensitive userspace state cannot be refreshed reliably, use a cold boot instead.</div>
+<h3>5.4 Lifecycle</h3>
+<pre>build golden snapshot (offline)
+  → register image hash in runner
+  → for each sample:
+       restore snapshot  OR  cold-boot from known image
+       inject task files via vsock or block attach
+       start wall clock
+       pump tool calls from runner
+       collect artifacts over control channel
+       power off
+       wipe overlay / delete jailer chroot
+       retain only host-side logs and copied artifacts</pre>
+<h3>5.5 What Firecracker is not allowed to do here</h3>
+<ul>
+<li>Long-lived “agent workspaces” that survive across days on a host that also sees weights.</li>
+<li>Open egress “because the SWE task needs GitHub.” Mirror the repos into the snapshot.</li>
+<li>GPU passthrough as a convenience. Only for named GPU evals on hosts whose IOMMU groups are clean.</li>
+</ul>
+</section>
+<section id="kata">
+<h2>6. Kata / Kubernetes profile (optional scale-out)</h2>
+<p>Use Kata only when sample volume or operational constraints require Kubernetes. Kata provides a VM boundary for a pod, but the effective hypervisor and runtime must be pinned and verified. Do not assume that selecting a Kata RuntimeClass automatically means Firecracker; current Kata distributions support several VMMs and defaults can change.</p>
+<h3>6.1 Cluster split</h3>
+<table>
+<thead>
+<tr><th>Pool</th><th>Runs</th><th>Runtime</th><th>Trust</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>runner-pool</td>
+<td>Inspect/Hawk runner, scoring, log shipper</td>
+<td>Ordinary runc is acceptable; still locked down</td>
+<td>Trusted, no model code</td>
+</tr>
+<tr>
+<td>exec-pool</td>
+<td>Agent tool pods</td>
+<td>Kata (Firecracker or Cloud Hypervisor backend)</td>
+<td>Untrusted</td>
+</tr>
+<tr>
+<td>answers-pool</td>
+<td>Hidden tests / gold labels</td>
+<td>Kata or isolated VM, <code>network_mode: none</code></td>
+<td>Trusted content, no agent code</td>
+</tr>
+</tbody>
+</table>
+<h3>6.2 Mandatory Kubernetes controls</h3>
+<ul>
+<li>Untrusted pods set <code>runtimeClassName</code> to the Kata class. Admission controller rejects exec pods without it.</li>
+<li>No default service account token mounted. No RBAC that can list Secrets, exec other pods, or read node files.</li>
+<li>NetworkPolicy deny-all on exec-pool. DNS that can resolve the internet is a fail.</li>
+<li>No hostPath, no Docker socket, no privileged: true, no CAP_SYS_ADMIN.</li>
+<li>Separate CNI / no shared writable volume across samples.</li>
+<li>Node taints so runner pods cannot schedule onto exec nodes and vice versa.</li>
+<li>Control plane and etcd are not reachable from exec-pool.</li>
+<li>Admission verifies both runtimeClassName and the approved node/runtime configuration hash. If the containment profile requires Firecracker, a Kata pod using another VMM is rejected rather than silently accepted.</li><li>Enforce Pod Security “restricted” or stricter plus custom admission: deny hostNetwork, hostPID, hostIPC, hostPath, privileged containers, device mounts, dangerous capabilities, and runtime/socket mounts.</li><li>Set automountServiceAccountToken: false for exec pods. Do not merely rely on the absence of RBAC permissions.</li><li>NetworkPolicy is one layer only. Exec nodes also sit behind infrastructure-level egress controls that do not depend on the cluster CNI being correct.</li><li>Use per-run or per-sample namespaces where feasible; never place a privileged helper sidecar in the same pod/VM as model-controlled code.</li><li>Control-plane credentials, kubelet APIs, node metadata, cloud pod identity endpoints, and container runtime sockets are unreachable from the sandbox network.</li></ul>
+<div class="callout warn">
+<strong class="label">Cluster warning</strong>
+          Kata does not save a shared package cache, a helpful Artifactory, or a
+          node that also mounts the weight PVC. Those are the failure modes that
+          have already shown up in multi-agent incidents. If you cannot keep exec
+          nodes free of shared writable infrastructure, do not use Kubernetes for
+          this workload.
+        </div>
+</section>
+<section id="qubes">
+<h2>7. Qubes operator plane</h2>
+<p>
+          Eval breakout is often guest → operator, not guest → host. Model output
+          is untrusted content. Researchers must not open it in the domain that
+          holds credentials.
+        </p>
+<h3>7.1 Required qubes</h3>
+<table>
+<thead>
+<tr><th>Qube</th><th>Role</th><th>Net</th><th>May hold</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>dom0</td>
+<td>Window manager only</td>
+<td>None</td>
+<td>Nothing eval-related</td>
+</tr>
+<tr>
+<td>vault</td>
+<td>Keys, weight paths, gold-label pointers, signing keys</td>
+<td>None</td>
+<td>Secrets only</td>
+</tr>
+<tr>
+<td>eval-ctrl</td>
+<td>Job UI, runner SSH, log review (text)</td>
+<td>Via sys-firewall to eval API only</td>
+<td>Operational access, not raw weights</td>
+</tr>
+<tr>
+<td>untrusted-browse</td>
+<td>Papers, GitHub, vendor docs</td>
+<td>Yes, firewalled</td>
+<td>No secrets</td>
+</tr>
+<tr>
+<td>dispXXXX</td>
+<td>Open model HTML, PDFs, patches, notebooks</td>
+<td>None by default</td>
+<td>One artifact, then destroyed</td>
+</tr>
+<tr>
+<td>sys-net / sys-usb / sys-firewall</td>
+<td>Drivers and policy</td>
+<td>As Qubes default</td>
+<td>Untrusted by design</td>
+</tr>
+</tbody>
+</table>
+<h3>7.2 Operator rules</h3>
+<ul><li>No qrexec policy permits a disposable artifact qube to invoke shell-like services in eval-ctrl or vault. Inter-qube RPC is explicit and narrowly allowlisted.</li><li>There is no normal artifact→vault path. If material must be promoted, export a reduced representation (plain text, flattened image, or reviewed patch) through a dedicated review workflow; never copy the original rich object.</li><li>The local vault stores administrator/recovery secrets only. Live job credentials are issued by the backend broker, so compromise of eval-ctrl does not reveal a reusable provider or cluster key.</li><li>No USB passthrough into eval-ctrl or vault. sys-usb/sys-net remain untrusted service qubes.</li><li>Model-produced HTML, PDF, notebook, office document, archive, or image metadata is opened in a no-network disposable by default. Rendering in eval-ctrl is limited to sanitized plain text.</li><li>If Qubes is not acceptable operationally, reproduce the same separation with distinct physical workstations and a narrow, auditable transfer path; do not collapse the trust domains.</li></ul>
+</section>
+<section id="network">
+<h2>8. Network, secrets, and shared state</h2>
+<p>Isolation technology and network policy are separate controls. A perfectly isolated microVM with broad egress is still an exfiltration endpoint. All execution networks therefore use two independent enforcement layers: a per-VM host/netns policy and an upstream router/firewall policy.</p>
+<h3>8.1 Egress matrix</h3>
+<table>
+<thead>
+<tr><th>Destination</th><th>Golden image build</th><th>Sample runtime</th></tr>
+</thead>
+<tbody>
+<tr><td>Public internet</td><td>Deny (use internal mirror)</td><td>Deny</td></tr>
+<tr><td>Package registries</td><td>Allow via internal mirror</td><td>Deny</td></tr>
+<tr><td>Model provider API</td><td>N/A</td><td>Deny (runner only)</td></tr>
+<tr><td>Eval broker / data proxy</td><td>N/A</td><td>Allow only if the named task requires it</td></tr>
+<tr><td>Sibling samples</td><td>N/A</td><td>Deny</td></tr>
+<tr><td>Cloud metadata (169.254.169.254 and equivalents)</td><td>Deny</td><td>Deny at tap</td></tr>
+<tr><td>Cluster DNS that can recurse to the world</td><td>Deny</td><td>Deny</td></tr>
+<tr><td>IPv6 global/link-local/multicast</td><td>Deny unless explicitly needed</td><td>Deny unless explicitly declared; default is no IPv6 route</td></tr><tr><td>ARP/NDP/L2 peers</td><td>Builder network only</td><td>No shared L2 peer set; per-VM tap/netns</td></tr><tr><td>Runner control plane</td><td>N/A</td><td>No routable path; host initiates control out-of-band</td></tr><tr><td>Time/NTP</td><td>Internal pinned source if required</td><td>No network NTP by default; inject/virtualize time if needed</td></tr></tbody>
+</table>
+<p>Enforce first at the microVM edge using a dedicated network namespace/tap policy that the guest cannot reconfigure, and again at an upstream firewall or router outside the eval host. Rules cover IPv4, IPv6, UDP, TCP, ICMP, DNS, multicast, broadcast, link-local, metadata ranges, and cluster/service CIDRs. A failure of either layer blocks scheduling.</p>
+<h3>8.2 Secret handling</h3>
+<ul>
+<li>Provider keys and internal model tokens live in a backend hardware-backed secret store or HSM; the Qubes vault holds only human/recovery authority.</li>
+<li>Runner receives a per-run workload identity that the model gateway accepts, and nothing that a provider or inference service would accept directly. Guest receives nothing.</li>
+<li>If a task needs a dataset, the runner attaches a read-only block or injects files. No cloud SDK with a role in the guest.</li>
+<li>Hidden tests and flags live in the answers plane. The agent filesystem never contains <code>/flag</code> for the real host.</li>
+</ul>
+<h3>8.3 Banned shared conveniences</h3>
+<ul>
+<li>Writable package caches visible to more than one sample.</li>
+<li>Shared <code>/tmp</code>, overlay networks with pod-to-pod DNS, NFS “scratch.”</li>
+<li>World-listable object buckets used as drop boxes.</li>
+<li>CI systems that build eval images on the same nodes that run them.</li>
+</ul>
+<p>
+          If caching is required for speed, use a content-addressed, append-only,
+          non-listable store populated only by the image builder.
+        </p>
+
+<h3>8.4 Credential-bound service access</h3>
+<p>For authenticated service access at stage C3, prefer a supervisor/proxy pattern in which the guest never receives the real credential. The guest presents a non-secret provider reference or placeholder; the proxy substitutes the credential only after the complete request matches the signed policy.</p>
+<ul>
+<li>Credential binding includes agent/run identity, destination, TLS identity, protocol, method/operation, and where feasible request/resource scope. A token approved for one endpoint is never exposed or replayable at another.</li>
+<li>Read-only policy is enforced at the request layer when the protocol is inspectable; possession of a backend credential with broader native permissions does not automatically grant those permissions to the agent.</li>
+<li>Policy denials are recorded out of band. The model may receive a minimal denial reason, but denial text must not reveal secrets, hidden policy structure, or security instrumentation details.</li>
+<li><strong>Read-only is not no-exfiltration.</strong> Request-level “read-only” stops writes. It does not stop information leaving: paths, query strings, header values, object names, request timing, and request counts all carry bits, and the receiving service logs them. Allowed destinations must be internal services we control, request fields are length- and charset-bounded by the typed schema, and each run has a request-rate and request-bytes budget.</li>
+<li><strong>Where TLS terminates.</strong> The guest talks to the supervisor over a typed local channel (vsock or a fixed-schema local socket); the supervisor originates TLS to the upstream service. Avoid designs that install an interception CA inside the guest: they work, but they make the CA private key on the proxy a high-value secret and teach the guest a trust anchor it can study.</li>
+</ul>
+<h3>8.5 Brokered network is a capability, not a proxy</h3>
+<ul>
+<li>No arbitrary URL parameter, CONNECT method, open redirect following, user-controlled DNS resolver, or generic SOCKS/HTTP proxy.</li>
+<li>Each broker action names a resource class and operation in advance (for example, fetch object X from mirror Y), with fixed destination rules and response-size limits.</li>
+<li>The broker strips caller-supplied authentication headers, rejects private/link-local/metadata destinations after resolution, rechecks redirects, and records the resolved endpoint.</li>
+<li>Responses return as bounded opaque bytes to quarantine or the runner; executable/rich content is never automatically rendered in the trusted process.</li>
+<li>Suites containing restricted source code, personal data, or unreleased research may use only approved internal inference so tool transcripts cannot become an exfiltration channel to a third party.</li>
+</ul>
+<h3>8.6 Independent safety and model-path enforcement</h3>
+<ul>
+<li>All model traffic is forced through a separate inference gateway; there is no DNS, route, credential, or alternate provider path from execution to the model endpoint.</li>
+<li>The gateway can stop future inference for a run and revoke brokered service access without cooperation from the agent, guest, or execution-host user space.</li>
+<li>For highest-risk runs, place a second monitor/enforcer outside the execution host's trust domain—for example on a dedicated security appliance/DPU or separate network hop. NVIDIA Sentry/BlueField is one implementation pattern, not a mandatory dependency.</li>
+<li>Continuous behavioral/drift monitoring may correlate policy decisions, tool calls, service requests, and inference events, but it is detection layered on top of deterministic authority controls, not a substitute for them.</li>
+<li>Do not make private reasoning or hidden chain-of-thought availability a prerequisite for containment. Security decisions must be derivable from externally observable requests, identities, policy, and resource access. Reasoning visibility may still be required <em>in addition</em> for higher capability stages (§9 staging).</li>
+<li><strong>Monitors can only restrict.</strong> Drift detectors, LLM classifiers, and human transcript reviewers read content that contains guest-authored bytes, so they can be prompt-injected or flooded. Their outputs may pause, narrow, or escalate a run; they may never widen authority, renew a lease on their own, or clear an alarm raised by a deterministic control.</li>
+<li><strong>Monitor lineage.</strong> LLM-based monitors and AI approvers come from a different model family or training lineage than the model under evaluation, so they do not share its blind spots or give it a same-model collusion channel. Where that is not possible, the run is capped at C2.</li>
+</ul>
+<h4>Independence conditions for the safety plane and any DPU layer</h4>
+<p>“Separate hardware” is not enough. The safety plane counts as independent only if all of the following hold, and each is checked before high-risk runs:</p>
+<ul>
+<li>Its management/policy plane is reachable only from a separate admin network, not from execution hosts, runner hosts, or the execution farm's admin network.</li>
+<li>It is administered by different people with different credentials from the execution farm (§12.3). No single operator credential can reconfigure both.</li>
+<li>Its firmware and policy are measured/attested, and a mismatch is a scheduling failure. The host it sits in cannot reflash it, change its policy, or disable it through a host-side driver.</li>
+<li>Loss of its signal from a host (heartbeat, telemetry, attestation) stops lease renewal for every run on that host.</li>
+<li>Vendor statements about line-rate enforcement, “in-silicon” isolation, or out-of-band placement are treated as claims until our own drill (T32, T40) reproduces them on the exact hardware and firmware in use.</li>
+</ul>
+<h3>8.7 What the policy prover does and does not prove</h3>
+<p>A policy prover answers: “given this policy <em>model</em>, can any modeled action reach a forbidden resource?” That is valuable and cheap, and it catches indirect routes a human reviewer misses. It is not a proof about the running system. Three gaps have to be closed separately.</p>
+<ul>
+<li><strong>Model–enforcer conformance.</strong> The prover reasons about a model of the policy; the supervisor, firewall, and broker enforce compiled rules. These can disagree (a parser difference, a Rego edge case, an unmodeled protocol feature). Before each release, fuzz the enforcers with generated requests and compare their allow/deny decisions to the prover's model. Any disagreement blocks release.</li>
+<li><strong>Binary-scoped rules inside a hostile VM.</strong> OpenShell-style rules can bind network access to an executable path. Inside an adversarial guest, any binary can be copied, renamed, or rewritten, so executable identity is not a boundary. Compute the envelope as if every process in the VM holds the union of all binary-scoped permissions; binary scoping may remain as extra hygiene.</li>
+<li><strong>Composition across agents.</strong> Two agents whose permissions are each within bounds can combine, through shared services or messages to each other, into a route that neither has alone. The envelope is computed over the union of every agent and sub-agent in the run, including inter-agent message channels as edges.</li>
+<li><strong>Coverage.</strong> The prover only knows the resources and operations it was told about. Every service in the suite manifest must have a declared operation model; an undeclared service or operation is denied, not assumed harmless.</li>
+</ul>
+<h3>8.8 Permission requests and approvals</h3>
+<p>Agents will ask for more access, and a capable agent will argue well. NVIDIA reports frontier agents with reduced safeguards spending up to two hours trying to persuade an AI reviewer to grant write access to a protected repository. The approval path is therefore an attack surface.</p>
+<ul>
+<li>A request is a structured diff against the current live policy. The approver (human or AI) sees the diff, the prover's result for the new policy, and the envelope; it does not see agent-authored justification text. If justification is needed, it is shown only in a quarantine viewer to a human, and never to an AI approver.</li>
+<li>Requests inside the signed envelope may be activated by an approver who is not the agent and not an AI from the same model lineage. Requests outside the envelope are refused automatically; the run must end and a new manifest be approved.</li>
+<li>Proposal rate limit per run (proposed default: at most 3 pending, at most 10 per run). Exceeding it pauses the run for review.</li>
+<li><strong>Denial circuit breaker.</strong> NVIDIA observes that drift often starts right after a policy block. A run that accumulates denials above a suite-set threshold, or that hits denials across several distinct resource classes, is paused and reviewed rather than left to search for a workaround.</li>
+</ul>
+</section>
+<section id="loop">
+<h2>9. Evaluation loop (runner contract)</h2>
+<p>Implement the runner so that the guest cannot import it, talk to it as a library, or hold its credentials.</p>
+<pre>for sample in suite:
+  manifest = verify_signed_capability_manifest(sample)
+  prove_within_authority_envelope(manifest)       # all agents, union of binary scopes
+  run = safety_plane.open_run(manifest)            # issues first short lease
+  vm = exec.start(image=manifest.image_hash, net=manifest.network_profile)
+  runner.inject_bounded(vm, sample.public_task_files)
+
+  while not done and not timeout and run.lease_valid():
+    # gateway rejects the call itself if the lease has lapsed;
+    # the runner's check is a courtesy, not the control
+    action = gateway.next(run.id, transcript_view(), tools=manifest.tools)
+    if action.type == "final":
+      break
+    action = validate_typed_action(action, manifest)
+    result_bytes = runner.exec_bounded(vm, action)
+    result = ingest.normalize_text_or_quarantine(result_bytes)
+    transcript.append(result.safe_view)
+    # authoritative audit comes from enforcement points, not from here
+
+  if run.stopped_for_incident():
+    stop_sequence(run, vm, capture=True)           # §9A
+    continue
+  candidate = ingest.collect_quarantined(vm, manifest.artifact_limits)
+  exec.destroy(vm)
+
+  score = scorer.run_disposable(candidate, sample.hidden_test_ref)
+  reconcile(transcript, safety_plane.audit(run.id))  # mismatch = incident
+  store.write(plain_transcript=transcript, score=score, audit_ref=run.id)</pre>
+
+<h3>9.1 Return-path quarantine and scoring</h3>
+<ul>
+<li><strong>Text is not trusted merely because it is text.</strong> Strip/escape terminal control sequences, OSC links, bidirectional control characters where appropriate for the viewer, and enforce per-message and per-run byte limits.</li>
+<li><strong>No recursive parsing in the runner.</strong> Archives, notebooks, PDFs, HTML, images, serialized objects, compiler diagnostics with clickable links, and other rich formats enter quarantine as opaque blobs.</li>
+<li><strong>Safe extraction only.</strong> If extraction is required, do it in a disposable sanitizer with limits on expanded bytes, file count, nesting depth, path length, symlinks/hardlinks, devices, absolute paths, and traversal.</li>
+<li><strong>Hidden tests stay blind.</strong> Interactive agent execution ends before hidden tests are attached. Candidate code runs against them in a separate no-network scorer VM; only a bounded score/result object returns.</li>
+<li><strong>The score comes from the harness, not the candidate.</strong> Candidate code runs in its own process (or VM) with no write access to the test harness, test files, or result channel. The harness decides pass/fail from its own observations, so patched test frameworks, faked exit codes, or printed “PASS” lines cannot change the score.</li>
+<li><strong>No auto-open.</strong> A generated URL, file, image, patch, or notebook cannot cause a trusted browser, editor, terminal, Git client, or shell to launch automatically.</li>
+<li><strong>Parsing failures fail closed.</strong> Truncation, malformed structured output, oversized logs, or ambiguous content types produce an explicit evaluation error rather than falling back to permissive handling.</li>
+</ul>
+<h3>Capability staging</h3>
+<p class="muted">Stages were called S0–S4 in v3. They are now C0–C4 so that “S3” is never confused with Amazon S3.</p>
+<table>
+<thead>
+<tr><th>Stage</th><th>Tools in guest</th><th>When allowed</th><th>Extra gate (v4)</th></tr>
+</thead>
+<tbody>
+<tr><td>C0 Text</td><td>None</td><td>Default for new checkpoints</td><td>—</td></tr>
+<tr><td>C1 Structured tools</td><td>No shell; allowlisted functions only, executed in a VM, never in the runner process</td><td>After C0 deception / exfil review</td><td>—</td></tr>
+<tr><td>C2 Code, no net</td><td>Firecracker + interpreter/shell</td><td>After C1; most agentic evals live here</td><td>Lease-based model path active</td></tr>
+<tr><td>C3 Brokered service access</td><td>Typed requests to named internal resources through the host supervisor</td><td>Two-person approval per suite</td><td>Different-lineage monitor; reasoning/activation monitoring where the model exposes it</td></tr>
+<tr><td>C4 Escape research</td><td>Inner sandbox under test, nested in Firecracker</td><td>Dedicated hosts; no weights on those hosts</td><td>As C3, plus independent-plane drill (T32, T40) passed on that pool</td></tr>
+</tbody>
+</table>
+<div class="callout"><strong class="label">On “scale authority with the ability to inspect thinking”</strong>
+NVIDIA's fourth principle is that the more an agent can do, the more visible its reasoning should be. v3 rejected this because containment should not depend on chain-of-thought. Both points are right, and they fit together: reasoning or activation visibility can be a <em>necessary</em> condition for C3–C4, but never a <em>sufficient</em> one. Visible reasoning can restrict a run (pause it, deny a stage); it cannot justify granting more, because we have no guarantee that visible reasoning is faithful to what the model is actually doing.</div>
+</section>
+<section id="stop">
+<h2>9A. Leases, the stop sequence, and forensic capture</h2>
+<p>v3 treated the kill switch as something the safety plane <em>does</em>. That leaves a hole: if the safety plane crashes, is cut off, or is fed false telemetry by a compromised host, nobody fires it. v4 turns this around. A run keeps its authority only while the safety plane keeps saying yes.</p>
+<h3>9A.1 Leases</h3>
+<ul>
+<li>At launch the safety plane issues a signed lease per run, with a short TTL. The model gateway and the service broker check the lease on every request and refuse if it has lapsed.</li>
+<li>The safety plane renews the lease only while all of these are healthy for that run's host: attestation, independent network-layer telemetry, deny-log pipeline, and the run's own step and denial budgets.</li>
+<li>Any failure, including the safety plane itself failing, means no renewal, which means the run stops by itself within one TTL. This is a dead-man's switch; the explicit kill command still exists but is the backup path.</li>
+<li>Leases are bound to run ID and host identity. A lease presented from another host or for another run is refused (T31, T35).</li>
+</ul>
+<h3>9A.2 Stop sequence</h3>
+<p>Cutting inference alone does not stop the guest: code already running in the VM keeps going. A stop therefore runs these steps in order. Each step is owned by a component that does not depend on the previous one succeeding.</p>
+<table>
+<thead><tr><th>Step</th><th>Action</th><th>Owner</th><th>Works if execution host is compromised?</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Refuse further inference; abort in-flight model streams</td><td>Model gateway (lease lapse or explicit revoke)</td><td>Yes</td></tr>
+<tr><td>2</td><td>Revoke broker/credential leases; outstanding substituted credentials are invalidated at the secret broker</td><td>Secret broker</td><td>Yes</td></tr>
+<tr><td>3</td><td>Drop all traffic for the VM, and for the whole host if host health is in doubt</td><td>Upstream firewall / DPU</td><td>Yes</td></tr>
+<tr><td>4</td><td>Pause the VM's vCPUs through the Firecracker API</td><td>Host orchestrator</td><td>No; if the host does not confirm the pause in time, go to step 6</td></tr>
+<tr><td>5</td><td>If the stop was an incident: snapshot paused memory and disk to the sealed forensic store</td><td>Host orchestrator → forensic store (write-once, no-route)</td><td>No; evidence from a compromised host is treated as possibly tampered</td></tr>
+<tr><td>6</td><td>Destroy the VM, or if the host is unresponsive, power the host off through its out-of-band management controller and quarantine it</td><td>Host orchestrator, else separately administered BMC</td><td>Yes, via BMC (loses memory evidence)</td></tr>
+</tbody></table>
+<h3>9A.3 Forensic capture rules</h3>
+<ul>
+<li>The forensic store is write-once, on hosts with no route to execution, runner, inference, or office networks.</li>
+<li>Captured images are opened only inside a no-network quarantine VM on a separate pool, never restored on a production eval host and never given to an agent.</li>
+<li>Captures are hostile artifacts: same rules as §9.1 for extraction and rendering.</li>
+<li>Non-incident stops (timeouts, normal completion) skip capture and go straight to destroy.</li>
+</ul>
+<h3>9A.4 Proposed initial targets</h3>
+<p class="muted">These are starting numbers for the acceptance tests, not measured results. Set final values per suite after measuring on the real hardware.</p>
+<table>
+<thead><tr><th>Quantity</th><th>Proposed target</th><th>Tested by</th></tr></thead>
+<tbody>
+<tr><td>Lease TTL</td><td>10–30 s</td><td>T33</td></tr>
+<tr><td>Inference refused after lapse or revoke</td><td>next request; in-flight stream aborted ≤ 1 s</td><td>T30, T33</td></tr>
+<tr><td>VM network dropped at upstream layer</td><td>≤ 2 s from stop decision</td><td>T34</td></tr>
+<tr><td>VM paused</td><td>≤ 5 s from stop decision, else escalate to BMC path</td><td>T34</td></tr>
+<tr><td>Denial circuit breaker</td><td>suite-set; start at 5 denials, or denials across 3 resource classes</td><td>T39</td></tr>
+<tr><td>Permission proposals</td><td>≤ 3 pending, ≤ 10 per run</td><td>T38</td></tr>
+</tbody></table>
+</section>
+<section id="escape">
+<h2>10. Nested architecture for escape evaluations</h2>
+<p>
+          If the suite measures whether the model can leave Docker, gVisor, or a
+          misconfigured pod, that environment is the <em>specimen</em>, not the
+          containment boundary.
+        </p>
+<div class="callout ok">
+<strong class="label">Required pattern</strong>
+          Specimen sandbox (possibly intentionally weak) inside a Firecracker
+          microVM that has no real flags, no weights, and no route to the eval
+          control plane. Success is “read /flag in the specimen host,” which is
+          still only the guest of the outer VM.
+        </div>
+<ul>
+<li>Outer VM image is hardened to this document’s Firecracker standard.</li>
+<li>Inner environment may be runc, an old kernel, or a planted misconfig — only here.</li>
+<li>Those hosts are a separate physical pool. Compromise of the outer guest is an incident, not a weight leak.</li>
+<li>Outer hosts sit on a dedicated network segment with an independent egress deny at the upstream firewall; they cannot route to CI, artifact stores, inference, secret brokers, or office networks.</li><li>Planted flags and credentials are synthetic canaries only. Never place a real provider token, cloud credential, SSH key, or weight-store credential in an escape target.</li><li>If the outer VMM/jailer crashes or an unexpected host-level effect is observed, quarantine the physical host and stop reuse until the event is classified.</li></ul>
+</section>
+<section id="build">
+<h2>11. Image factory and supply chain</h2>
+<ul>
+<li>Build snapshots on a builder that cannot be reached from exec VMs.</li>
+<li>Pin every package. Generate SBOM. Sign the snapshot hash.</li>
+<li>Runner refuses to boot an image whose hash is not in the allowlist for that suite.</li>
+<li>Rebuild on kernel/VMM/guest CVE; do not patch live guests.</li>
+<li>Third-party eval tasks are reviewed before their Dockerfiles touch the builder. Treat upstream task code as untrusted until diff-reviewed.</li>
+<li>Pin base images and packages by digest/hash, not mutable tags. Preserve provenance from source to signed image/snapshot manifest.</li><li>Builder credentials are ephemeral and are not committed to image layers, shell history, build caches, or snapshot memory.</li><li>Treat Firecracker, jailer, host kernel, guest kernel, Kata runtime, CNI, Qubes/Xen, and sanitizer/scorer images as independently versioned security dependencies with advisory tracking.</li><li>A suite manifest records exact image hashes, VMM/jailer hashes, host baseline ID, network policy ID, scorer image hash, and effective Kata hypervisor when applicable.</li></ul>
+</section>
+<section id="ops">
+<h2>12. Operations, monitoring, and staffing</h2>
+<h3>12.1 Telemetry (host-side)</h3>
+<ul>
+<li>VMM start/stop, jailer failures, resource kills.</li>
+<li>Tap packet summaries (denied flows especially).</li>
+<li>Full tool-call transcript on the runner, kept as a record of what the agent <em>said</em>. The authoritative record of what it <em>did</em> comes from enforcement points (VMM, network layers, broker, gateway) and is reconciled against the transcript after every run.</li>
+<li>Syscall audit of the VMM process, not a security agent the guest owns.</li>
+<li>Alerts: unexpected egress attempt, jailer crash, attempt to reach metadata, sample talking to another sample, runner process spawning a shell from model output.</li>
+<li>Append-only remote audit hashes for suite manifest, image/VMM versions, capability decisions, network denies, scorer result, and teardown completion.</li><li>Record run identity and lineage across agent/sub-agent creation, tool invocation, policy decisions, brokered service requests, credential bindings, and inference requests. Prefer an open event schema such as OCSF-compatible records where practical.</li><li>For high-risk runs, maintain a monitoring/enforcement signal outside the execution host so host compromise cannot erase the only audit trail or disable the only cutoff.</li><li>Telemetry health is itself monitored. If deny logging, upstream firewall verification, or teardown verification is unavailable, new high-risk samples do not start.</li><li>Log viewers render escaped plain text only. ANSI/OSC escape sequences and clickable URI handling are disabled in credential-bearing domains.</li></ul>
+<h3>12.2 Review</h3>
+<ul>
+<li>Sample trajectories for “am I being evaluated,” hidden goal language, and attempts to touch secrets or net.</li>
+<li>Weekly harness red team: MITM between runner and VM, RBAC review, cache abuse, scoring-channel injection.</li>
+<li>Incident rule: any unauthorized outbound packet, DNS request, metadata attempt, control-channel anomaly, or cross-sample signal is an incident, not merely a log line.</li>
+<li>Crash rule: unexpected VMM/jailer crash, seccomp violation, host kernel warning, or teardown failure quarantines the host until triage.</li><li>Canary endpoints and synthetic credentials may be used to detect boundary contact, but a canary alert never substitutes for a preventative control.</li></ul>
+<h3>12.3 Roles</h3>
+<table>
+<thead>
+<tr><th>Role</th><th>Duty</th><th>Must not</th></tr>
+</thead>
+<tbody>
+<tr><td>Eval engineer</td><td>Suites, scoring, runner policy</td><td>Hold production weight keys on the same laptop used for browsing</td></tr>
+<tr><td>Isolation engineer</td><td>Firecracker/Kata/Qubes baselines</td><td>Weaken egress to make a task “work”</td></tr>
+<tr><td>Safety-plane owner</td><td>Model gateway, lease service, upstream/DPU policy, forensic store</td><td>Hold execution-farm admin credentials, or share an admin network with the farm</td></tr>
+<tr><td>On-call</td><td>Pages for breakout-shaped events</td><td>SSH to exec hosts from an unlocked personal phone</td></tr>
+<tr><td>Approver (two-person)</td><td>C3 brokered service access, GPU passthrough, new image hashes, in-envelope policy activations</td><td>Approve their own change</td></tr>
+<tr><td>External eval liaison</td><td>METR / AISI-style partners on their infra when stakes rise</td><td>Ship raw weights to a partner without a written control</td></tr>
+</tbody>
+</table>
+</section>
+<section id="phases">
+<h2>13. Implementation milestones</h2>
+<div class="phase">
+<div class="n">P0</div>
+<div>
+<h4>Stop the obvious holes</h4>
+<ul>
+<li>Inventory every current eval path. Ban runc-as-inner-box for model code on shared nodes.</li>
+<li>Stand up one Firecracker host, jailer, golden snapshot, deny-all tap.</li>
+<li>Move runner off the exec host. Remove keys from guest images.</li>
+<li>Qubes or two-machine split for anyone with vault access.</li>
+</ul>
+<p><strong>Release criterion. </strong>a code-exec sample can run with no guest credentials, no public egress, a separate runner, and successful teardown verification.</p></div>
+</div>
+<div class="phase">
+<div class="n">P1</div>
+<div>
+<h4>Production eval path</h4>
+<ul>
+<li>Runner implements C0–C2 with image-hash allowlist and per-sample destroy.</li>
+<li>Host-side telemetry and denied-flow paging.</li>
+<li>Answers plane isolated.</li>
+<li>First harness red-team week.</li><li>Add policy compiler/prover checks for the signed maximum authority envelope and reject any manifest with a modeled route to forbidden resources.</li><li>Route all inference through a separately controlled gateway with a tested per-run cutoff. Move every provider/model credential off the runner and onto the gateway.</li><li>Lease-based authority for inference and broker access; stop sequence §9A implemented and drilled.</li><li>Prover–enforcer conformance fuzzing wired into release.</li>
+</ul>
+<p><strong>Release criterion. </strong>C0–C2 use signed manifests, quarantine/scoring isolation, two-layer network enforcement, host-side audit, and the expanded acceptance suite passes.</p></div>
+</div>
+<div class="phase">
+<div class="n">P2</div>
+<div>
+<h4>Scale and special evals</h4>
+<ul>
+<li>Optional Kata exec-pool with admission controls, only if Firecracker farm saturates.</li>
+<li>C3 brokered-service tasks under two-person rule, using credential substitution outside the workload and request-level policy where protocols are inspectable.</li><li>Pilot an OpenShell-like supervisor/policy layer if it reduces custom trusted code without weakening the Firecracker boundary. Treat its per-binary rules as hygiene only (§8.7).</li><li>Structured-diff approval path with proposal limits and denial circuit breaker (§8.8).</li><li>Sealed forensic store and capture path; first incident-drill that ends with a capture opened in quarantine.</li>
+<li>C4 nested escape suite on a dedicated pool.</li>
+<li>Snapshot fork for ablation runs from a frozen decision point.</li>
+</ul>
+<p><strong>Release criterion. </strong>any Kata, brokered-network, GPU, or escape-research path demonstrates the same invariants before it is enabled for frontier runs.</p></div>
+</div>
+<div class="phase">
+<div class="n">P3</div>
+<div>
+<h4>Assume the checkpoint got better</h4>
+<ul>
+<li>Re-run harness red team before each frontier checkpoint.</li>
+<li>Patch/rebuild cadence for guest kernel, Firecracker, Xen (Qubes), and host kernel.</li>
+<li>Written stop condition: if escape-eval success rate or covert-channel evidence crosses a pre-registered line, freeze tool-using evals and escalate off this document to an org-level pause.</li><li>Chaos drills at a fixed cadence: kill the safety plane, partition it, feed it stale telemetry; every drill must end with runs stopping by lease lapse.</li><li>For the highest-risk hardware tier, evaluate host-independent monitoring/enforcement on the path to inference and services (for example Sentry/BlueField-class DPU or equivalent separate security domain).</li>
+</ul>
+<p><strong>Release criterion. </strong>every frontier checkpoint revalidates the containment profile; security-advisory or configuration drift reopens the affected checks automatically.</p></div>
+</div>
+</section>
+<section id="tests">
+<h2>14. Acceptance tests (the plan is not done until these pass)</h2>
+<table>
+<thead>
+<tr><th>ID</th><th>Test</th><th>Expected result</th></tr>
+</thead>
+<tbody>
+<tr><td>T1</td><td>Guest inspects /proc, mount namespaces, devices, and Firecracker API paths</td><td>Only guest-visible state; no host proc mount, API socket, or host filesystem path is reachable</td></tr>
+<tr><td>T2</td><td>Guest curl to public IP and to metadata IP</td><td>Timeout / reject at tap</td></tr>
+<tr><td>T3</td><td>Guest lists env and files for keys</td><td>No provider tokens, no AWS/GCP/Azure creds</td></tr>
+<tr><td>T4</td><td>Two concurrent samples write a cache path</td><td>No shared writable path exists</td></tr>
+<tr><td>T5</td><td>Guest tries Docker socket / K8s API / SSH to runner</td><td>Not present or refused</td></tr>
+<tr><td>T6</td><td>Kill VMM mid-sample</td><td>Jailer tears down; no leftover tap or disk with task data</td></tr>
+<tr><td>T7</td><td>Inner runc escape in C4 suite</td><td>Flag of specimen visible; real host flag absent</td></tr>
+<tr><td>T8</td><td>Open model-produced HTML on operator laptop</td><td>Only possible in disposable qube; vault unreachable</td></tr>
+<tr><td>T9</td><td>Admission of an exec pod without Kata runtime (if K8s used)</td><td>Rejected</td></tr>
+<tr><td>T10</td><td>Runner binary imported or executed from guest</td><td>Not on guest filesystem; no credentials to call it</td></tr>
+<tr><td>T11</td><td>Guest probes MMDS and Firecracker API socket</td><td>MMDS absent unless suite-declared; API socket unreachable from guest and unrelated host users</td></tr><tr><td>T12</td><td>Guest sends IPv6, UDP, ICMP, DNS, multicast, link-local, metadata, and random L2 traffic</td><td>Denied by VM-edge policy and independently by upstream policy as applicable</td></tr><tr><td>T13</td><td>Guest emits 100+ MiB stdout, terminal escapes, OSC links, malformed UTF-8, and control characters</td><td>Bounded/truncated with explicit status; trusted viewer remains plain text and inert</td></tr><tr><td>T14</td><td>Guest returns zip/tar with ../ traversal, symlinks, devices, nested bombs, huge expansion</td><td>Runner never extracts it; disposable sanitizer rejects or safely bounds it</td></tr><tr><td>T15</td><td>Candidate attempts to read hidden tests during interactive phase</td><td>Hidden tests do not exist in execution VM or transcript</td></tr><tr><td>T16</td><td>Scorer runs malicious candidate against hidden tests</td><td>Scorer has no network/admin credentials; only bounded score/result returns; scorer is destroyed</td></tr><tr><td>T17</td><td>Kata RuntimeClass resolves to an unapproved VMM/configuration</td><td>Admission/scheduler rejects the run; effective hypervisor is recorded</td></tr><tr><td>T18</td><td>Disposable artifact qube invokes qrexec toward vault/eval-ctrl with shell/file-copy services</td><td>Denied by policy; no rich artifact can flow directly into vault</td></tr><tr><td>T19</td><td>Disable one network-enforcement layer in a staging drill</td><td>Verification fails and high-risk scheduling stops; remaining layer still denies traffic</td></tr><tr><td>T20</td><td>Telemetry/deny-log pipeline unavailable</td><td>High-risk scheduling stops; containment rules remain active</td></tr><tr><td>T21</td><td>Restore two VMs from the same snapshot and inspect IDs/random-dependent state</td><td>Kernel reseeds via VMGenID-capable path; per-run identities differ; uniqueness-sensitive suites cold-boot</td></tr><tr><td>T22</td><td>Crash VMM/jailer or leave teardown incomplete</td><td>Host is quarantined; no automatic reuse until triage</td></tr><tr><td>T23</td><td>Guest tries to reach runner, inference, broker, kubelet, container runtime, and control plane by all known addresses</td><td>No routable path or authentication surface is reachable</td></tr><tr><td>T24</td><td>Restricted suite attempts to forward raw tool/artifact bytes to an external model/judge</td><td>Policy blocks or reduces data according to suite classification</td></tr><tr><td>T25</td><td>Mutate suite image hash, VMM hash, network profile, scorer hash, or capability manifest after approval</td><td>Run is rejected before execution</td></tr>
+<tr><td>T26</td><td>Add an apparently narrow policy rule that creates an indirect route to a forbidden service through another tool/provider</td><td>Authority-envelope analysis finds the reachable forbidden action and rejects the manifest before launch</td></tr>
+<tr><td>T27</td><td>Agent requests broader network/file/tool authority during a live run</td><td>It cannot self-approve; changes outside the signed envelope require run termination and a newly approved manifest</td></tr>
+<tr><td>T28</td><td>Guest uses an approved service placeholder against the wrong hostname, method, resource, redirect, or TLS identity</td><td>Real credential is never inserted; request is denied and audited</td></tr>
+<tr><td>T29</td><td>Inspect guest environment, process memory, files, and packet payloads during authenticated brokered access</td><td>No reusable provider/service credential is observable inside the workload</td></tr>
+<tr><td>T30</td><td>Trigger the per-run model-path kill switch while the guest continues requesting actions</td><td>No further inference completes; guest cannot reach an alternate model endpoint</td></tr>
+<tr><td>T31</td><td>Forge/replay a sub-agent or tool identity, or detach an action from its parent run</td><td>Request is rejected; audit trail preserves run/parent lineage for every authorized action</td></tr>
+<tr><td>T32</td><td>In a staging drill, compromise/disable execution-host telemetry and local policy processes</td><td>Independent upstream/model-path enforcement remains active, detects loss of the host signal, stops high-risk scheduling, and can cut inference/service access</td></tr>
+<tr><td>T33</td><td>Kill, hang, or network-partition the safety plane during a live run</td><td>Leases lapse; gateway and broker refuse within one TTL; runs stop without anyone firing a kill command</td></tr>
+<tr><td>T34</td><td>Trigger a stop while the guest runs a long CPU loop, a background process, and a retrying network client</td><td>Upstream layer drops VM traffic, vCPUs pause, all within the §9A targets; if the host does not confirm the pause, BMC path fires</td></tr>
+<tr><td>T35</td><td>From a compromised runner, call the inference endpoint directly and replay the runner's gateway identity from another host</td><td>No credential on the runner works at the inference endpoint; replayed identity is refused</td></tr>
+<tr><td>T36</td><td>Fuzz supervisor, broker, and firewall with generated requests; compare decisions to the prover's model</td><td>Zero disagreements; any disagreement blocks release</td></tr>
+<tr><td>T37</td><td>Guest copies/renames an allowed binary, or writes its own HTTP client, to use a binary-scoped network permission</td><td>Envelope analysis already assumed this; no reachable action exceeds the envelope</td></tr>
+<tr><td>T38</td><td>Agent submits permission proposals with persuasive, adversarial, or prompt-injecting justification text</td><td>AI approver never sees the text; proposals over the rate limit pause the run; out-of-envelope requests auto-refused</td></tr>
+<tr><td>T39</td><td>Agent hits repeated denials across several resource classes</td><td>Circuit breaker pauses the run for review</td></tr>
+<tr><td>T40</td><td>From the execution host (root), try to reconfigure, reflash, or disable the DPU/upstream layer, and reach its management plane</td><td>No path; attestation mismatch stops scheduling; lease renewal stops for that host</td></tr>
+<tr><td>T41</td><td>Guest output contains text aimed at the LLM monitor (e.g. instructions to report “normal”)</td><td>Monitor cannot widen authority or clear a deterministic alarm; injection attempts are flagged, not obeyed</td></tr>
+<tr><td>T42</td><td>Agent's final summary claims actions it did not take, or omits actions it did take</td><td>Transcript-vs-audit reconciliation flags the mismatch as an incident</td></tr>
+<tr><td>T43</td><td>Using one execution-farm admin credential, attempt to change safety-plane policy, gateway config, or lease issuance</td><td>Refused; no shared credential or admin network exists</td></tr>
+<tr><td>T44</td><td>Candidate code patches the test framework, forges exit codes, or prints fake pass markers</td><td>Harness-derived score is unaffected</td></tr>
+<tr><td>T45</td><td>Two agents in one run each hold in-envelope permissions that combine into a forbidden route via a shared service or messages</td><td>Composed envelope analysis finds the route and rejects the manifest</td></tr></tbody>
+</table>
+</section>
+<section id="fail">
+<h2>15. Residual risk (do not file this under “solved”)</h2>
+<ul>
+<li><strong>VMM and hypervisor 0-days.</strong> Firecracker and Xen shrink surface; they do not prove it empty.</li>
+<li><strong>Microarchitectural leakage.</strong> VM isolation does not erase Spectre-class issues between co-tenants.</li>
+<li><strong>The trusted runner.</strong> If scoring scripts or eval packages become attacker-influenced, the VM was never in the path.</li>
+<li><strong>Operators.</strong> Qubes reduces splash radius; it does not stop a coerced paste of a key.</li>
+<li><strong>Allowed channels.</strong> Timing of API calls, token usage, and content of permitted tool results still leak.</li>
+<li><strong>Deployment.</strong> A clean eval says little about serving the same weights with tools to the world.</li>
+<li><strong>Return-path bugs.</strong> A new parser, renderer, editor integration, log processor, or scorer can silently become part of the trusted computing base.</li><li><strong>Policy/configuration drift.</strong> RuntimeClass, CNI, hypervisor flags, qrexec policy, firewall rules, or image tags can change without changing the evaluation code.</li><li><strong>Prover model gaps.</strong> Conformance fuzzing finds disagreements it happens to generate; it does not prove there are none. An unmodeled protocol feature is invisible to both the prover and the fuzzer.</li><li><strong>Covert channels through allowed requests.</strong> Request budgets reduce bandwidth; they do not make it zero.</li><li><strong>Common-mode failure in the safety plane.</strong> Separate admins and hardware reduce shared failure, but the lease service, gateway, and DPU still share a vendor, a policy language, or an organization.</li><li><strong>Inference-mediated channels.</strong> The model endpoint is itself a communication endpoint; what the runner sends back to it must be considered part of the information-flow policy.</li></ul>
+<div class="callout danger"><strong class="label">If the checkpoint may exceed this threat model</strong>
+Move from “evaluation sandboxing” to an organizational containment protocol: dedicated inference hardware and network, no external tool or internet access by default,
+independent review, stronger personnel controls, explicit information-flow limits, pre-registered stop conditions, and external evaluation where appropriate.
+The infrastructure in this document remains useful, but it is no longer the sole decision boundary.
+</div>
+</section>
+<section id="checklist">
+<h2>16. Go / no-go checklist</h2>
+<p>Do not start tool-using evals on a new frontier checkpoint until every box is true.</p>
+<ul><li>□ Signed suite manifest fixes tools, image hash, VMM/jailer hash, network profile, scorer image, time/resource limits, and data classification.</li><li>□ Inference, independent safety/model-path control, execution, scoring/quarantine, backend secrets, orchestration, and operator domains are separated.</li><li>□ Every code-exec sample boots a jailed Firecracker microVM (or an explicitly approved equivalent profile) with production seccomp enabled and no undeclared devices/MMDS.</li><li>□ Execution has two independent egress barriers; IPv4, IPv6, DNS, metadata, multicast, link-local, and control-plane routes are covered.</li><li>□ No shared writable cache, overlay, bucket, namespace, or L2 segment exists across untrusted samples.</li><li>□ Hidden tests never enter the interactive agent environment; scoring occurs in a disposable isolated scorer.</li><li>□ Return bytes are size-bounded; rich artifacts are quarantined; trusted viewers render inert plain text only.</li><li>□ Backend job credentials come from a short-lived machine broker/HSM; Qubes vault holds human/recovery authority, not live server tokens.</li><li>□ Escape suites are nested on sacrificial hosts with no weights, real credentials, or route to production infrastructure.</li><li>□ Qubes qrexec policy has no rich-artifact→vault path; model artifacts open in no-network disposable domains.</li><li>□ Effective Kata hypervisor/runtime and CNI/admission configuration are verified rather than inferred from RuntimeClass name.</li><li>□ Host patch/advisory status, teardown verification, telemetry health, and upstream firewall verification are green.</li><li>□ Signed maximum authority envelope is machine-checked; live changes cannot exceed it; the agent cannot approve its own expansion.</li><li>□ Authenticated C3 service access keeps real credentials outside the workload and binds substitution to approved identity, endpoint, protocol, and operation.</li><li>□ Every inference call traverses the independent model-path gateway; the per-run cutoff has been tested and no alternate model route exists.</li><li>□ Agent/sub-agent/tool/service/inference lineage is complete in the remote audit trail; high-risk runs retain an enforcement signal outside the execution host.</li><li>□ Inference and broker access run on leases; the chaos drill (T33) ended with runs stopping by lease lapse.</li><li>□ Stop sequence meets the §9A targets on this hardware; forensic store is write-once and no-route.</li><li>□ No provider/model credential exists outside the gateway.</li><li>□ Prover–enforcer conformance fuzzing passed; envelope computed over all agents and the union of binary scopes.</li><li>□ Approvals use structured diffs only; AI approvers and LLM monitors come from a different model lineage than the model under test.</li><li>□ Safety-plane admins and credentials are disjoint from execution-farm admins and credentials.</li><li>□ T1–T45 passed on the exact current host + VMM + guest + policy + scorer + model-gateway + safety-plane build.</li><li>□ Written stop condition and escalation owner exist above this infrastructure plan.</li></ul>
+</section>
+
+<section id="sources">
+<h2>17. Source anchors and verification notes</h2>
+<p>This plan should be revalidated against current upstream documentation before deployment. The two NVIDIA posts were re-read on 28 September 2026 for v4; the other anchors are carried over from v3.</p>
+<table>
+<thead><tr><th>Component</th><th>Operational point anchored upstream</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>Firecracker</td><td>Production use is intended with the jailer; Firecracker installs default thread-specific seccomp filters; overall isolation also depends on host configuration.</td><td><a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md">Firecracker design</a> · <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/seccomp.md">seccomp</a> · <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/jailer.md">jailer</a></td></tr>
+<tr><td>Firecracker snapshots</td><td>Snapshot reuse can duplicate userspace uniqueness state; VMGenID helps reseed the guest kernel but does not make arbitrary userspace clone state safe.</td><td><a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/snapshot-support.md">snapshot support</a> · <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md">entropy for clones</a></td></tr>
+<tr><td>Kata Containers</td><td>Kata supports multiple hypervisors, including Firecracker, so RuntimeClass alone is not enough evidence of the effective VMM.</td><td><a href="https://github.com/kata-containers/kata-containers/blob/main/docs/hypervisors.md">Kata hypervisors</a></td></tr>
+<tr><td>Kubernetes</td><td>RuntimeClass, NetworkPolicy, admission controls, and disabling unnecessary service-account token mounts are separate security controls.</td><td><a href="https://kubernetes.io/docs/concepts/security/security-checklist/">Kubernetes security checklist</a></td></tr>
+<tr><td>Qubes OS</td><td>Security comes from compartmentalization; qrexec is the explicit inter-domain RPC boundary; disposables are intended for untrusted files and lose state on shutdown.</td><td><a href="https://doc.qubes-os.org/en/r4.3/developer/system/architecture.html">Qubes architecture</a> · <a href="https://doc.qubes-os.org/en/r4.3/developer/services/qrexec.html">qrexec</a> · <a href="https://doc.qubes-os.org/en/development/user/how-to-guides/how-to-use-disposables.html">disposables</a></td></tr>
+<tr><td>Inspect / METR Hawk</td><td>Modern eval infrastructure separates trusted runner/model credentials from sandbox execution and uses deny-by-default sandbox networking; output sizes are explicitly bounded.</td><td><a href="https://hawk.metr.org/user-guide/sandbox-network-isolation/">Hawk network isolation</a> · <a href="https://inspect.aisi.org.uk/reference/inspect_ai.util.html">Inspect sandbox API</a></td></tr>
+<tr><td>NVIDIA OpenShell 0.1.0</td><td>Gateway / per-sandbox supervisor / sandbox split; kernel-level file and process controls; no network path except through the supervisor; HTTP, GraphQL, and MCP request inspection (e.g. allow reads, block writes); policies written in YAML and compiled to OPA/Rego, with network rules bound to endpoints <em>and executable paths</em>; placeholder credentials substituted outside the workload and only for approved endpoints; OCSF audit trail; agent-proposed policy changes held for review and not self-approvable; filesystem/process limits fixed at sandbox start. The prover checks <em>modeled</em> permissions against an operator boundary; multi-agent composition is described as ongoing work. The two-hour persuasion experiment and its “no protected repository writes” outcome are vendor-reported.</td><td><a href="https://developer.nvidia.com/blog/add-runtime-controls-to-ai-agents-with-nvidia-openshell">OpenShell runtime controls</a> · <a href="https://docs.nvidia.com/openshell/dev/reference/policy-prover">policy prover docs</a> · <a href="https://github.com/NVIDIA/OpenShell">repository</a></td></tr>
+<tr><td>NVIDIA Open Agent Safety Platform</td><td>Five principles: verifiable policy, out-of-band enforcement, the path to the model as control point and kill switch, authority scaled with reasoning visibility, and shared responsibility. Motivated by reports from several labs of agents leaving evaluation environments and misreporting what they did. Notes that drift can start in response to a policy block. Sentry on BlueField-4 (via DOCA) is an optional layer that correlates agent interactions, policy decisions, and tool/data access, with identity governance at a DOCA gateway. In Vera Rubin PODs the DPU is described as on the node's only path to the model. Line-rate, “in-silicon”, and “just a software update” statements are vendor claims not independently verified here.</td><td><a href="https://developer.nvidia.com/blog/nvidia-open-agent-safety-platform-a-reference-for-continuous-in-silicon-agent-monitoring">NVIDIA technical blog</a> · <a href="https://www.nvidia.com/en-us/solutions/ai/agent-safety/">platform overview</a></td></tr>
+</tbody>
+</table>
+<p class="muted">Security advisories and release notes are operational inputs, not background reading. A signed image is not safe merely because its hash is stable.</p><p class="muted">NVIDIA's September 28, 2026 material is used here for architecture patterns, not as evidence that any one product formally contains ASI. Reasoning visibility is adopted only as an additional restricting gate for higher stages, never as a security prerequisite or a reason to grant authority; deterministic authority, identity, information-flow, lease expiry, and out-of-band cutoff remain the enforceable controls.</p>
+</section>
+<footer>End of plan (v4, 28 September 2026). Containment target: bounded eval-time tool use, scoring, artifact handling, and operator workflow. This is a high-assurance engineering design, not a claim of formal ASI control.</footer>
+</main>
+</div>
+</body>
+</html>
