@@ -2,7 +2,9 @@
 
 A defense-in-depth plan for running capability, alignment, and agentic evaluations against highly capable models without letting tool use turn into host compromise, weight theft, internet reach, cross-sample contamination, or capture of operator credentials.
 
-**Read it:** open [`index.html`](index.html) in a browser, or view the GitHub Pages site if it is enabled for this repo.
+**Read it online:** https://hirosakuraba.github.io/asi-eval-containment-plan/
+
+The source is [`index.html`](index.html); it also works opened directly in a browser.
 
 ## What's in it
 
