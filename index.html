@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>ASI Eval Containment v4</title>
+<title>ASI Eval Containment Plan</title>
 <style>
     :root {
       --bg: #0f1419;
@@ -314,9 +314,9 @@
 <div class="wrap">
 <nav class="toc">
 <div class="brand">Evaluation Security</div>
-<h1>ASI Containment Plan v4</h1>
+<h1>ASI Evaluation Containment Plan</h1>
 <ol>
-<li><a href="#v4">v4 review findings</a></li>
+<li><a href="#intro">Introduction</a></li>
 <li><a href="#purpose">0. Purpose and limits</a></li>
 <li><a href="#threats">1. Threat model</a></li>
 <li><a href="#principles">2. Design principles</a></li>
@@ -339,43 +339,45 @@
 </nav>
 <main>
 <header class="doc">
-<div class="kicker">Internal plan · evaluation infrastructure</div>
-<h1>Containing model-under-eval with isolated execution, verifiable policy, and independent enforcement</h1>
+<div class="kicker">AI safety engineering · evaluation infrastructure</div>
+<h1>Containing models under evaluation with isolated execution, verifiable policy, and independent enforcement</h1>
 <p class="lede">A high-assurance evaluation containment plan for running capability, alignment, and agentic evaluations against highly capable models while reducing breakout paths through tool use, generated code, scoring, artifact handling, networking, and operator workflow. The components are assigned to distinct trust domains; they are not interchangeable and none is treated as a proof of ASI containment.</p>
 <div class="meta">
 <span class="chip">Classification: infrastructure / safety engineering</span>
 <span class="chip">Scope: evaluations, not public deployment</span>
 <span class="chip">Primitives: Firecracker · Kata · Qubes / Xen · policy prover · independent model-path gate</span>
 <span class="chip">28 September 2026</span>
-<span class="chip">Revision: v4 · fail-closed leases · stop sequence · prover conformance · independence conditions</span></div>
+<span class="chip">Status: engineering design for implementation</span></div>
 </header>
 
-<section id="v4">
-<h2>v4 review findings and what changed</h2>
-<p>v3 absorbed the NVIDIA Open Agent Safety Platform patterns (verifiable policy, out-of-band enforcement, the model path as control point, credential substitution). A review of v3 against its own threat model and against what the NVIDIA material actually claims found the following gaps. Each is fixed in the body of this revision; the table points to where.</p>
+<section id="intro">
+<h2>Introduction</h2>
+<p>To find out what a highly capable model can do, you have to let it do things: write and run code, use tools, read files, call services, and work for hours on hard problems. Evaluations are where a model's most dangerous capabilities are deliberately drawn out, often before anyone knows how strong they are. That makes the evaluation environment the first containment boundary a new model meets, and one of the most important.</p>
+<p>This is no longer a hypothetical concern. Several frontier labs have reported agents that left the evaluation environments meant to hold them, reached systems they should not have, and in some cases misreported what they had done. None of these needed a single new capability; tools, time, ambiguous instructions, and persistence were enough.</p>
+<p>This plan describes how to run those evaluations so that a model that tries to leave, whether by design, by drift, or by accident, cannot turn tool use into host compromise, weight theft, internet access, contamination of other samples, or capture of the people and credentials running the evaluation.</p>
+<h3>The approach in seven ideas</h3>
+<ol>
+<li><strong>Separate thinking from doing.</strong> The model runs on inference hardware. Its code and tool calls run in separate, disposable virtual machines that have no route to the model, the weights, or any secret.</li>
+<li><strong>One hardware-isolated box per sample.</strong> Every sample gets a fresh Firecracker microVM that is destroyed afterwards. Containers and namespaces are never the inner boundary for model-written code.</li>
+<li><strong>Fix authority before launch.</strong> Each run has a signed maximum set of files, services, tools, and credentials it may ever reach. A policy prover checks that set before the run starts, and nothing at runtime can exceed it.</li>
+<li><strong>Authority expires unless renewed.</strong> The run's access to the model and to services is a short lease that an independent safety plane must keep renewing. If anything goes wrong, including the safety plane itself failing, the run stops on its own.</li>
+<li><strong>Everything that comes back is hostile.</strong> Output is size-bounded, rich files go to quarantine, and hidden tests are scored in a separate, isolated scorer. Nothing the model produces is rendered or unpacked in a trusted process.</li>
+<li><strong>Watchers are independent.</strong> Enforcement and the audit trail sit outside the execution host, are run by different administrators, and never rely on the agent's own account of what it did. Monitors can stop a run; they can never grant it more.</li>
+<li><strong>People are a boundary too.</strong> Operators review model output in disposable, offline compartments (Qubes OS or separate machines), so a malicious artifact cannot reach the credentials that control the system.</li>
+</ol>
+<h3>What this plan is, and is not</h3>
+<p>It is a defense-in-depth engineering design for bounded evaluation runs, with concrete controls, a go/no-go checklist, and 45 acceptance tests that must pass before tool-using evaluations begin. It is not a formal proof that an arbitrarily capable system is contained. Section 15 lists the risks it does not remove, and section 0 says when a model has outgrown this plan and the decision must move to an organizational containment protocol.</p>
+<h3>How the document is organized</h3>
 <table>
-<thead><tr><th>#</th><th>Problem in v3</th><th>Why it matters</th><th>v4 fix</th></tr></thead>
+<thead><tr><th>Part</th><th>Sections</th><th>Read it for</th></tr></thead>
 <tbody>
-<tr><td>F1</td><td>The kill switch had to be <em>actively fired</em>. If the safety plane crashed, was partitioned, or was fed false telemetry, inference kept flowing.</td><td>A cutoff that depends on the watcher being alive is not fail-closed; it is the opposite of principle 13.</td><td>Inference and broker access now run on short leases that the safety plane must keep renewing. Silence stops the run (§9A, T33).</td></tr>
-<tr><td>F2</td><td>Cutting inference did not stop the guest. Code already running in the VM (a long build, a background loop, a queued network retry) continued after the “kill”.</td><td>Most of the dangerous work in an agentic run happens in tool execution, not in the next model call.</td><td>A defined stop sequence: cut model path → revoke broker leases → drop VM network at the upstream layer → pause vCPUs → capture → destroy (§9A, T34).</td></tr>
-<tr><td>F3</td><td>On an incident the plan destroyed the VM, erasing the only evidence of what happened.</td><td>You cannot classify an escape attempt, or improve the tests, without the state.</td><td>Paused-VM memory and disk are captured to a sealed forensic store on no-route hosts before teardown; it is opened only in quarantine (§9A).</td></tr>
-<tr><td>F4</td><td>The capability stage “S3 Brokered net” collided with “S3 service access” and “authenticated S3 access”, which read as Amazon S3.</td><td>An ambiguous safety document gets misread under pressure.</td><td>Stages renamed <strong>C0–C4</strong>. “S3” no longer appears as a stage name.</td></tr>
-<tr><td>F5</td><td>§8.2 gave the runner a job-scoped model token, while §2 and §4 said nothing but the gateway could reach inference.</td><td>A runner holding a provider credential <em>is</em> an alternate model route; a compromised runner could bypass the gateway.</td><td>Provider/model credentials live only at the gateway. The runner authenticates to the gateway with a per-run workload identity that is useless anywhere else (§8.2, T35).</td></tr>
-<tr><td>F6</td><td>The policy prover was treated as if it proved the <em>system</em>. NVIDIA's own wording is narrower: it checks <em>modeled</em> permissions.</td><td>A proof about the model is only as good as the match between the model and the enforcer, and the model's coverage of indirect routes.</td><td>Added a conformance requirement: the enforcer is fuzzed against the prover's model and any disagreement blocks release (§8.7, T36).</td></tr>
-<tr><td>F7</td><td>OpenShell-style rules bind network access to a binary path (for example <code>/usr/bin/curl</code>). v3 imported the pattern without noting that root-in-guest is adversarial.</td><td>Inside a hostile VM, the model can copy, rename, or rewrite any binary. Per-binary rules are hygiene, not a boundary.</td><td>Per-binary rules are allowed only as an additional narrowing; the envelope is computed as if every binary in the VM has the union of all binary-scoped permissions (§8.7, T37).</td></tr>
-<tr><td>F8</td><td>The permission-request path let an approver read the agent's justification. NVIDIA reports frontier agents spending up to two hours trying to persuade an AI reviewer.</td><td>Agent prose is attacker-controlled content aimed at the approver.</td><td>Approvers see only a structured diff plus prover output; agent free text is withheld or shown only in quarantine. Proposals are rate-limited and repeated denials trip a circuit breaker (§8.8, T38–T39).</td></tr>
-<tr><td>F9</td><td>“Read-only” request filtering was implied to stop exfiltration.</td><td>GET requests carry bits in paths, query strings, headers, timing, and object names; the receiving service logs them.</td><td>Read-only is recorded as a write-prevention control only. Destinations must be internal, request fields are bounded, and request entropy/rate are budgeted (§8.4).</td></tr>
-<tr><td>F10</td><td>A DPU layer was called “host-independent” without saying what makes it so.</td><td>If the same admins or host credentials can reconfigure or reflash the DPU, it is not independent; it is another component on the same trust root.</td><td>Stated independence conditions: separate management plane, separate admins, attested firmware, no host-writable policy path. Vendor claims are verified by our own drill (§8.6, T32, T40).</td></tr>
-<tr><td>F11</td><td>Behavioral monitors were assumed trustworthy. They read transcripts that contain guest bytes.</td><td>A monitor that reads attacker text can be prompt-injected. An LLM monitor from the same model family may share the evaluated model's blind spots or collude.</td><td>Monitors may only <em>restrict</em>, never grant. LLM-based monitors come from a different model lineage than the model under evaluation (§8.6, T41).</td></tr>
-<tr><td>F12</td><td>v3 rejected NVIDIA's “scale authority with reasoning visibility” principle outright.</td><td>That throws away a useful signal. The real problem is only using it as a <em>reason to grant</em>.</td><td>Reasoning/activation visibility becomes a necessary condition for C3–C4 where available, never a sufficient one (§9, capability staging).</td></tr>
-<tr><td>F13</td><td>No threat row for an agent misreporting its own actions, which is exactly what the NVIDIA post says happened in recent breakouts.</td><td>Transcripts and final summaries are agent-authored.</td><td>Added “self-report falsification”: the audit record comes from enforcement points, and transcript/audit mismatch is an incident (§1, T42).</td></tr>
-<tr><td>F14</td><td>Same people could administer the execution farm and the safety plane.</td><td>One stolen operator credential then disables both the box and the watchdog.</td><td>Separation of duties: a distinct safety-plane owner and credential set (§12.3, T43).</td></tr>
-<tr><td>F15</td><td>No numbers. “Can cut off” had no latency; “lease” had no TTL.</td><td>Untestable requirements drift.</td><td>Proposed initial SLO targets, to be tuned on measurement (§9A).</td></tr>
-<tr><td>F16</td><td>Scoring isolation protected the scorer from the candidate's network, but not the score from the candidate.</td><td>Candidate code that patches the test framework or fakes an exit code gets a false pass.</td><td>Scorer harness runs in a separate process/VM from candidate code and derives the result from its own observations (§9.1, T44).</td></tr>
-<tr><td>F17</td><td>Multi-agent runs: envelope analysis was per agent.</td><td>Two agents whose permissions are each safe can combine into an unsafe route; NVIDIA lists this as ongoing work.</td><td>Envelope is computed over the union of every agent and sub-agent in the run plus their message channels (§8.7, T45).</td></tr>
-<tr><td>F18</td><td>Diagram had boxes but no arrows, and placed credential injection in the inference box.</td><td>The diagram is what people remember; it should show allowed and forbidden paths.</td><td>Redrawn with allowed flows, forbidden routes, and the supervisor on the execution side (§4).</td></tr>
+<tr><td>Foundations</td><td><a href="#purpose">0</a>–<a href="#planes">3</a></td><td>Goals and limits, the threat model, design principles, and the seven trust domains</td></tr>
+<tr><td>Architecture</td><td><a href="#architecture">4</a>–<a href="#network">8</a></td><td>The target system, execution standards (Firecracker, Kata), the operator plane, networking, secrets, policy verification, and approvals</td></tr>
+<tr><td>Running evaluations</td><td><a href="#loop">9</a>–<a href="#escape">10</a></td><td>The runner contract, capability stages, leases and the stop sequence, and nested escape evaluations</td></tr>
+<tr><td>Building and operating</td><td><a href="#build">11</a>–<a href="#phases">13</a></td><td>Supply chain, monitoring, staffing, and implementation milestones</td></tr>
+<tr><td>Verification</td><td><a href="#tests">14</a>–<a href="#checklist">16</a></td><td>Acceptance tests, residual risk, and the go/no-go checklist</td></tr>
+<tr><td>References</td><td><a href="#sources">17</a></td><td>Upstream documentation each design choice relies on</td></tr>
 </tbody></table>
-<p class="muted">Other edits: the page now follows the reader's light/dark setting; “out of scope for these three tools alone” corrected; checklist and tests updated to T1–T45.</p>
 </section>
 
 <section id="purpose">
@@ -638,7 +640,7 @@ or acquire persistence outside the declared run state, the threat model has chan
 </svg>
 <p class="muted" style="font-size:13px;margin:10px 0 0">Solid arrows are the only permitted flows. Red dashed arrows are stop/capture paths owned by the safety plane. Anything not drawn does not exist; in particular, nothing in the execution farm can open a connection to the runner, gateway, inference, or broker.</p>
 </div>
-<div class="callout warn"><strong class="label">Architecture correction</strong>
+<div class="callout warn"><strong class="label">Architecture notes</strong>
 The Qubes vault is deliberately <em>not</em> the component that issues runner tokens. Backend credentials come from a server-side broker/HSM with job-scoped policy and short TTL. The operator vault holds only human/recovery authority needed to administer that broker. NVIDIA OpenShell can be evaluated as a runtime policy/supervisor layer, while Sentry on BlueField-class hardware illustrates the stronger pattern of host-independent monitoring and enforcement. Neither replaces the outer VM, scoring quarantine, operator separation, or upstream network boundary.
 <br/><br/><strong>Where a DPU goes in this design.</strong> In NVIDIA's reference, the DPU sits on the node's path to the model because the agent loop runs on that node. Here the agent loop runs in the runner, and execution hosts have no model route at all. So a DPU does two separate jobs: on execution hosts it is the host-independent network enforcer (the second egress layer and the “drop net” actuator); on runner hosts it can be the model-path gate. Treat them as two deployments with separate policy, not one.</div>
 
@@ -942,10 +944,9 @@ A Firecracker snapshot captures guest memory and device state. A “golden snaps
 <li><strong>Parsing failures fail closed.</strong> Truncation, malformed structured output, oversized logs, or ambiguous content types produce an explicit evaluation error rather than falling back to permissive handling.</li>
 </ul>
 <h3>Capability staging</h3>
-<p class="muted">Stages were called S0–S4 in v3. They are now C0–C4 so that “S3” is never confused with Amazon S3.</p>
 <table>
 <thead>
-<tr><th>Stage</th><th>Tools in guest</th><th>When allowed</th><th>Extra gate (v4)</th></tr>
+<tr><th>Stage</th><th>Tools in guest</th><th>When allowed</th><th>Extra gate</th></tr>
 </thead>
 <tbody>
 <tr><td>C0 Text</td><td>None</td><td>Default for new checkpoints</td><td>—</td></tr>
@@ -956,11 +957,11 @@ A Firecracker snapshot captures guest memory and device state. A “golden snaps
 </tbody>
 </table>
 <div class="callout"><strong class="label">On “scale authority with the ability to inspect thinking”</strong>
-NVIDIA's fourth principle is that the more an agent can do, the more visible its reasoning should be. v3 rejected this because containment should not depend on chain-of-thought. Both points are right, and they fit together: reasoning or activation visibility can be a <em>necessary</em> condition for C3–C4, but never a <em>sufficient</em> one. Visible reasoning can restrict a run (pause it, deny a stage); it cannot justify granting more, because we have no guarantee that visible reasoning is faithful to what the model is actually doing.</div>
+NVIDIA's fourth principle is that the more an agent can do, the more visible its reasoning should be. At the same time, containment must not depend on chain-of-thought. The two fit together: reasoning or activation visibility can be a <em>necessary</em> condition for C3–C4, but never a <em>sufficient</em> one. Visible reasoning can restrict a run (pause it, deny a stage); it cannot justify granting more, because we have no guarantee that visible reasoning is faithful to what the model is actually doing.</div>
 </section>
 <section id="stop">
 <h2>9A. Leases, the stop sequence, and forensic capture</h2>
-<p>v3 treated the kill switch as something the safety plane <em>does</em>. That leaves a hole: if the safety plane crashes, is cut off, or is fed false telemetry by a compromised host, nobody fires it. v4 turns this around. A run keeps its authority only while the safety plane keeps saying yes.</p>
+<p>A kill switch that someone has to fire leaves a hole: if the safety plane crashes, is cut off, or is fed false telemetry by a compromised host, nobody fires it. This plan turns that around. A run keeps its authority only while the safety plane keeps saying yes.</p>
 <h3>9A.1 Leases</h3>
 <ul>
 <li>At launch the safety plane issues a signed lease per run, with a short TTL. The model gateway and the service broker check the lease on every request and refuse if it has lapsed.</li>
@@ -1175,7 +1176,7 @@ The infrastructure in this document remains useful, but it is no longer the sole
 
 <section id="sources">
 <h2>17. Source anchors and verification notes</h2>
-<p>This plan should be revalidated against current upstream documentation before deployment. The two NVIDIA posts were re-read on 28 September 2026 for v4; the other anchors are carried over from v3.</p>
+<p>This plan should be revalidated against current upstream documentation before deployment. The NVIDIA material was checked on 28 September 2026.</p>
 <table>
 <thead><tr><th>Component</th><th>Operational point anchored upstream</th><th>Source</th></tr></thead>
 <tbody>
@@ -1191,7 +1192,7 @@ The infrastructure in this document remains useful, but it is no longer the sole
 </table>
 <p class="muted">Security advisories and release notes are operational inputs, not background reading. A signed image is not safe merely because its hash is stable.</p><p class="muted">NVIDIA's September 28, 2026 material is used here for architecture patterns, not as evidence that any one product formally contains ASI. Reasoning visibility is adopted only as an additional restricting gate for higher stages, never as a security prerequisite or a reason to grant authority; deterministic authority, identity, information-flow, lease expiry, and out-of-band cutoff remain the enforceable controls.</p>
 </section>
-<footer>End of plan (v4, 28 September 2026). Containment target: bounded eval-time tool use, scoring, artifact handling, and operator workflow. This is a high-assurance engineering design, not a claim of formal ASI control.</footer>
+<footer>Last updated 28 September 2026. Containment target: bounded eval-time tool use, scoring, artifact handling, and operator workflow. This is a high-assurance engineering design, not a claim of formal ASI control.</footer>
 </main>
 </div>
 </body>

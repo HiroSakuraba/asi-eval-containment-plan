@@ -1,25 +1,43 @@
-# ASI Evaluation Containment Plan (v4)
+# ASI Evaluation Containment Plan
 
-A defense-in-depth plan for running capability, alignment, and agentic evaluations against highly capable models without letting tool use turn into host compromise, weight theft, internet reach, cross-sample contamination, or capture of operator credentials.
+An engineering plan for safely evaluating highly capable AI models that write code, use tools, and act over long horizons.
 
-**Read it online:** https://hirosakuraba.github.io/asi-eval-containment-plan/
+**Read the plan:** https://hirosakuraba.github.io/asi-eval-containment-plan/
 
-The source is [`index.html`](index.html); it also works opened directly in a browser.
+## Why
 
-## What's in it
+To learn what a frontier model can do, you have to let it act: run code, call tools, reach services. Evaluations are where its most dangerous capabilities are deliberately drawn out, often before anyone knows how strong they are. Several labs have reported agents escaping evaluation environments and misreporting what they did. The evaluation environment is the first containment boundary a new model meets, and it has to hold.
 
-- Seven separated trust domains: execution (Firecracker, optional Kata), orchestration, artifact/scoring quarantine, inference, an independent safety/model-path plane, backend secrets, and the operator plane (Qubes).
-- Verifiable policy: a signed maximum authority envelope checked by a policy prover before launch, plus conformance testing between the prover's model and the real enforcers.
-- A fail-closed model path: inference and brokered service access run on short leases that stop by themselves unless the safety plane keeps renewing them.
-- A defined stop sequence (cut model → revoke credentials → drop network → pause VM → forensic capture → destroy).
-- Capability stages C0–C4, residual-risk register, go/no-go checklist, and 45 acceptance tests.
+This plan describes how to run those evaluations so a model that tries to leave cannot turn tool use into host compromise, weight theft, internet access, cross-sample contamination, or capture of operator credentials.
 
-## v4 changes
+## Approach
 
-v4 reviews v3 against its own threat model and against NVIDIA's Open Agent Safety Platform and OpenShell material (28 September 2026). The findings table at the top of the document lists each gap (F1–F18) and where it is fixed.
+1. **Separate thinking from doing.** Inference and code execution run in different trust domains with no route between them.
+2. **One hardware-isolated box per sample.** A fresh Firecracker microVM per sample, destroyed afterwards.
+3. **Fix authority before launch.** A signed, prover-checked envelope sets the most a run can ever reach.
+4. **Authority expires unless renewed.** Model and service access are short leases; if the safety plane goes silent, the run stops.
+5. **Everything that comes back is hostile.** Bounded output, quarantined artifacts, isolated scoring.
+6. **Independent watchers.** Enforcement and audit sit outside the execution host, run by separate administrators, and never rely on the agent's own account.
+7. **People are a boundary too.** Operators review model output in disposable, offline compartments.
 
-## Status and limits
+## What's in the document
 
-This is an engineering design for bounded evaluation runs. It is not a formal proof that an arbitrarily capable system is contained. Timing targets in §9A are proposed starting values, not measurements.
+| Part | Covers |
+| --- | --- |
+| Foundations | Goals and limits, threat model, design principles, trust domains |
+| Architecture | Target system, Firecracker/Kata execution, Qubes operator plane, networking, secrets, policy verification, approvals |
+| Running evaluations | Runner contract, capability stages C0–C4, leases and stop sequence, nested escape evaluations |
+| Building and operating | Supply chain, monitoring, staffing, milestones |
+| Verification | 45 acceptance tests, residual risk, go/no-go checklist |
 
-Author: Benjamin John Schulz
+## Scope and limits
+
+This is a defense-in-depth design for bounded evaluation runs. It is not a formal proof that an arbitrarily capable system is contained. The document lists the risks it does not remove and says when a model has outgrown it. Timing targets in the stop-sequence section are proposed starting values, not measurements.
+
+## Files
+
+- [`index.html`](index.html): the full plan, a single self-contained page that also works opened locally.
+
+## Author and license
+
+Benjamin John Schulz. Released under the [MIT License](LICENSE).
